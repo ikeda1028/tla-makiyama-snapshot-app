@@ -1,4 +1,4 @@
-# TLA・牧山 Snapshot Governance
+# G.D.DAOver.0
 
 TLA・牧山チームのプロジェクト設計、Asana実行管理、成果承認、Snapshot向け意思決定をつなぐプロトタイプです。
 
