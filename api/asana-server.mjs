@@ -4,6 +4,7 @@ import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleAsanaApi, sendJson } from "../lib/asana-core.mjs";
 import { handleOpenAiApi } from "../lib/openai-core.mjs";
+import { handleStateApi } from "../lib/state-core.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const appRoot = join(root, "outputs", "tla-makiyama-snapshot-app");
@@ -62,6 +63,8 @@ http.createServer(async (req, res) => {
       if (asanaHandled !== false) return;
       const openAiHandled = await handleOpenAiApi(req, res, url);
       if (openAiHandled !== false) return;
+      const stateHandled = await handleStateApi(req, res, url);
+      if (stateHandled !== false) return;
     }
     return staticFile(res, url.pathname);
   } catch (error) {

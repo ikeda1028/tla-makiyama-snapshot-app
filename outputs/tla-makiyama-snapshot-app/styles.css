@@ -646,6 +646,13 @@ label {
   gap: 10px;
 }
 
+.cloud-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
 .api-state {
   min-height: 36px;
   padding: 9px 10px;
@@ -1053,7 +1060,8 @@ pre {
   .asana-grid,
   .task-point-summary,
   .workflow-steps,
-  .api-config-grid {
+  .api-config-grid,
+  .cloud-grid {
     grid-template-columns: 1fr;
   }
 }

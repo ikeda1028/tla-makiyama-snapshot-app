@@ -55,6 +55,27 @@
         </header>
 
         <section class="view active" id="overview">
+          <section class="panel cloud-panel">
+            <div class="panel-header">
+              <div>
+                <h3>クラウドDB</h3>
+                <p class="subtle">Vercel KVにプロジェクト状態を保存し、別端末でも続きから開けます。</p>
+              </div>
+              <span class="pill">Database</span>
+            </div>
+            <div class="cloud-grid">
+              <label>
+                保存キー
+                <input id="cloudWorkspaceKey" type="text" maxlength="80" placeholder="例：tla-makiyama-main">
+              </label>
+              <div class="panel-actions">
+                <button class="secondary-button" id="loadCloudState" type="button">クラウド読込</button>
+                <button class="primary-button" id="saveCloudState" type="button">クラウド保存</button>
+              </div>
+            </div>
+            <div class="api-state" id="cloudState">ローカル保存のみ有効です</div>
+          </section>
+
           <section class="panel ppm-planner">
             <div class="panel-header">
               <div>

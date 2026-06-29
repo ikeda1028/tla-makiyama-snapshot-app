@@ -38,7 +38,8 @@ const initialState = {
     useContributionWeight: true,
     asanaApiBase: "",
     asanaWorkspaceGid: "",
-    asanaProjectGid: ""
+    asanaProjectGid: "",
+    cloudWorkspaceKey: "tla-makiyama-main"
   },
   project: {
     name: "TLA・牧山チーム PPM導入",
@@ -108,6 +109,12 @@ function persist() {
   window.setTimeout(() => {
     saveState.textContent = "保存済み";
   }, 280);
+}
+
+function setCloudState(message, mode = "") {
+  const element = document.querySelector("#cloudState");
+  element.textContent = message;
+  element.className = `api-state ${mode}`;
 }
 
 function memberName(id) {
@@ -1359,7 +1366,58 @@ function syncSettingsFromForm() {
   state.settings.spaceId = document.querySelector("#spaceId").value.trim() || initialState.settings.spaceId;
   state.settings.networkId = document.querySelector("#networkId").value;
   state.settings.useContributionWeight = document.querySelector("#useContributionWeight").checked;
+  state.settings.cloudWorkspaceKey = document.querySelector("#cloudWorkspaceKey").value.trim() || initialState.settings.cloudWorkspaceKey;
   syncAsanaApiSettings();
+}
+
+function cloudKey() {
+  syncSettingsFromForm();
+  return state.settings.cloudWorkspaceKey || initialState.settings.cloudWorkspaceKey;
+}
+
+async function saveStateToCloud() {
+  setCloudState("クラウドDBへ保存中...", "warn");
+  try {
+    syncProjectFromForm();
+    syncSettingsFromForm();
+    const data = await callAppApi("/api/state", {
+      method: "POST",
+      body: JSON.stringify({
+        key: cloudKey(),
+        state
+      })
+    });
+    persist();
+    setCloudState(`保存OK: ${new Date(data.savedAt).toLocaleString("ja-JP")}`, "ready");
+    showToast("クラウドDBへ保存しました");
+  } catch (error) {
+    setCloudState(error.message, "error");
+  }
+}
+
+async function loadStateFromCloud() {
+  setCloudState("クラウドDBから読込中...", "warn");
+  try {
+    const data = await callAppApi(`/api/state?key=${encodeURIComponent(cloudKey())}`);
+    if (!data.state) {
+      setCloudState("この保存キーにはまだデータがありません", "warn");
+      return;
+    }
+    state = mergeState(structuredClone(initialState), data.state);
+    persist();
+    document.querySelector("#cloudWorkspaceKey").value = state.settings.cloudWorkspaceKey ?? initialState.settings.cloudWorkspaceKey;
+    document.querySelector("#spaceId").value = state.settings.spaceId;
+    document.querySelector("#networkId").value = state.settings.networkId;
+    document.querySelector("#useContributionWeight").checked = state.settings.useContributionWeight;
+    document.querySelector("#asanaApiBase").value = state.settings.asanaApiBase ?? "";
+    document.querySelector("#asanaWorkspaceGid").value = state.settings.asanaWorkspaceGid ?? "";
+    document.querySelector("#asanaProjectGid").value = state.settings.asanaProjectGid ?? "";
+    render();
+    setCloudState(`読込OK: ${data.savedAt ? new Date(data.savedAt).toLocaleString("ja-JP") : "保存日時なし"}`, "ready");
+    showToast("クラウドDBから読み込みました");
+  } catch (error) {
+    setCloudState(error.message, "error");
+  }
 }
 
 function render() {
@@ -1559,6 +1617,8 @@ document.querySelector("#localPpmPlan").addEventListener("click", () => {
 });
 
 document.querySelector("#addAiTasksToLog").addEventListener("click", addAiTasksToContributionLog);
+document.querySelector("#saveCloudState").addEventListener("click", saveStateToCloud);
+document.querySelector("#loadCloudState").addEventListener("click", loadStateFromCloud);
 document.querySelector("#addManualTask").addEventListener("click", addManualTask);
 document.querySelector("#exportTaskCsv").addEventListener("click", exportTaskCsv);
 document.querySelector("#exportAsanaCsv").addEventListener("click", exportAsanaCsv);
@@ -1692,7 +1752,7 @@ document.querySelector("#copySnapshotPayload").addEventListener("click", async (
   }
 });
 
-["#voteProposal", "#voteMember", "#spaceId", "#networkId", "#useContributionWeight", "#asanaApiBase", "#asanaWorkspaceGid", "#asanaProjectGid"].forEach((selector) => {
+["#voteProposal", "#voteMember", "#spaceId", "#networkId", "#useContributionWeight", "#asanaApiBase", "#asanaWorkspaceGid", "#asanaProjectGid", "#cloudWorkspaceKey"].forEach((selector) => {
   document.querySelector(selector).addEventListener("input", () => {
     syncSettingsFromForm();
     persist();
@@ -1704,6 +1764,7 @@ document.querySelector("#copySnapshotPayload").addEventListener("click", async (
 document.querySelector("#spaceId").value = state.settings.spaceId;
 document.querySelector("#networkId").value = state.settings.networkId;
 document.querySelector("#useContributionWeight").checked = state.settings.useContributionWeight;
+document.querySelector("#cloudWorkspaceKey").value = state.settings.cloudWorkspaceKey ?? initialState.settings.cloudWorkspaceKey;
 document.querySelector("#asanaApiBase").value = state.settings.asanaApiBase ?? "";
 document.querySelector("#asanaWorkspaceGid").value = state.settings.asanaWorkspaceGid ?? "";
 document.querySelector("#asanaProjectGid").value = state.settings.asanaProjectGid ?? "";
