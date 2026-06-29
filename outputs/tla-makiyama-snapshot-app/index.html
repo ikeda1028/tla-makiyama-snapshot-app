@@ -6,7 +6,8 @@
     <title>G.D.DAOver.0</title>
     <script>
       window.__assetBase = window.location.protocol === "file:" ? "./" : "/outputs/tla-makiyama-snapshot-app/";
-      document.write(`<link rel="stylesheet" href="${window.__assetBase}styles.css">`);
+      window.__assetVersion = "20260630-midjoin";
+      document.write(`<link rel="stylesheet" href="${window.__assetBase}styles.css?v=${window.__assetVersion}">`);
     </script>
   </head>
   <body>
@@ -83,9 +84,9 @@
             <div class="panel-header">
               <div>
                 <h3>メンバー編集</h3>
-                <p class="subtle">名前、ID、役割を概況から直接編集できます。</p>
+                <p class="subtle">途中参加者も含め、名前、ID、役割、参加日を概況から直接編集できます。</p>
               </div>
-              <button class="secondary-button" id="addOverviewMember" type="button">メンバー追加</button>
+              <button class="secondary-button" id="addOverviewMember" type="button">途中参加メンバー追加</button>
             </div>
             <div class="table-scroll">
               <table class="overview-member-table">
@@ -93,6 +94,8 @@
                   <tr>
                     <th>名前</th>
                     <th>Wallet / ENS / 仮ID</th>
+                    <th>参加区分</th>
+                    <th>参加日</th>
                     <th>役割</th>
                     <th>貢献pt</th>
                     <th>投票重み</th>
@@ -442,7 +445,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
     <script>
       const appScript = document.createElement("script");
-      appScript.src = `${window.__assetBase || "./"}app.js`;
+      appScript.src = `${window.__assetBase || "./"}app.js?v=${window.__assetVersion || "dev"}`;
       document.body.appendChild(appScript);
     </script>
   </body>

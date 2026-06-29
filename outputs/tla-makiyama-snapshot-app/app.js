@@ -1,9 +1,9 @@
 const initialState = {
   members: [
-    { id: "m1", name: "牧山", wallet: "0xMakiyama", role: "プロジェクトオーナー" },
-    { id: "m2", name: "TLA企画", wallet: "0xTLAPlan", role: "企画・設計" },
-    { id: "m3", name: "現場伴走", wallet: "0xField", role: "現場調整" },
-    { id: "m4", name: "広報編集", wallet: "0xMedia", role: "発信・編集" }
+    { id: "m1", name: "牧山", wallet: "0xMakiyama", role: "プロジェクトオーナー", joinStatus: "初期", joinedAt: "2026-06-24" },
+    { id: "m2", name: "TLA企画", wallet: "0xTLAPlan", role: "企画・設計", joinStatus: "初期", joinedAt: "2026-06-24" },
+    { id: "m3", name: "現場伴走", wallet: "0xField", role: "現場調整", joinStatus: "初期", joinedAt: "2026-06-24" },
+    { id: "m4", name: "広報編集", wallet: "0xMedia", role: "発信・編集", joinStatus: "初期", joinedAt: "2026-06-24" }
   ],
   contributions: [
     { id: "c1", memberId: "m1", category: "戦略", title: "6月プロジェクト方針の整理", points: 28, date: "2026-06-24" },
@@ -98,7 +98,9 @@ function mergeState(base, saved) {
   const members = (saved.members ?? base.members ?? []).map((member) => ({
     ...(baseMembersById[member.id] ?? {}),
     ...member,
-    role: member.role ?? baseMembersById[member.id]?.role ?? ""
+    role: member.role ?? baseMembersById[member.id]?.role ?? "",
+    joinStatus: member.joinStatus ?? baseMembersById[member.id]?.joinStatus ?? "初期",
+    joinedAt: member.joinedAt ?? baseMembersById[member.id]?.joinedAt ?? ""
   }));
   return {
     ...base,
@@ -1281,7 +1283,7 @@ function renderMembers() {
         <span class="title-line">${escapeHtml(member.name)}</span>
         <span class="pill">${powers[member.id] ?? 0}%</span>
       </div>
-      <div class="subtle">${escapeHtml(member.role || "役割未設定")} · ${escapeHtml(member.wallet)}</div>
+      <div class="subtle">${escapeHtml(member.role || "役割未設定")} · ${escapeHtml(member.joinStatus || "初期")} ${escapeHtml(member.joinedAt || "日付未設定")} · ${escapeHtml(member.wallet)}</div>
     </article>
   `).join("");
 }
@@ -1296,6 +1298,15 @@ function renderOverviewMembers() {
       </td>
       <td>
         <input data-overview-member-field="wallet" type="text" maxlength="64" value="${escapeHtml(member.wallet)}" aria-label="${escapeHtml(member.name)}のID">
+      </td>
+      <td>
+        <select data-overview-member-field="joinStatus" aria-label="${escapeHtml(member.name)}の参加区分">
+          <option value="初期" ${member.joinStatus === "初期" ? "selected" : ""}>初期</option>
+          <option value="途中参加" ${member.joinStatus === "途中参加" ? "selected" : ""}>途中参加</option>
+        </select>
+      </td>
+      <td>
+        <input data-overview-member-field="joinedAt" type="date" value="${escapeHtml(member.joinedAt || "")}" aria-label="${escapeHtml(member.name)}の参加日">
       </td>
       <td>
         <input data-overview-member-field="role" type="text" maxlength="40" value="${escapeHtml(member.role || "")}" placeholder="例：企画・設計" aria-label="${escapeHtml(member.name)}の役割">
@@ -1377,6 +1388,9 @@ function renderSnapshotPayload() {
     members: state.members.map((member) => ({
       name: member.name,
       address: member.wallet,
+      role: member.role || "",
+      joinStatus: member.joinStatus || "初期",
+      joinedAt: member.joinedAt || "",
       votingPower: powers[member.id] ?? 0
     })),
     proposals: state.proposals.map((proposal) => ({
@@ -1572,8 +1586,10 @@ function updateOverviewMember(row, field, value) {
     ...member,
     [field]: value.trim()
   };
-  if (field === "role") {
+  if (["role", "joinStatus", "joinedAt"].includes(field)) {
     member.role = next.role;
+    member.joinStatus = next.joinStatus;
+    member.joinedAt = next.joinedAt;
   } else {
     const validationError = validateMemberValues(next.name, next.wallet, member.id);
     if (validationError) {
@@ -1600,7 +1616,9 @@ function uniqueMemberDraft() {
     id: `m${Date.now()}`,
     name: `新規メンバー${index}`,
     wallet: `member-${index}`,
-    role: ""
+    role: "",
+    joinStatus: "途中参加",
+    joinedAt: today()
   };
 }
 
@@ -1608,7 +1626,7 @@ function addOverviewMember() {
   state.members.push(uniqueMemberDraft());
   persist();
   render();
-  showToast("メンバー行を追加しました");
+  showToast("途中参加メンバーを追加しました");
 }
 
 function deleteOverviewMember(row) {
@@ -1633,7 +1651,17 @@ function showToast(message) {
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const year = values.year;
+  const month = values.month;
+  const day = values.day;
+  return `${year}-${month}-${day}`;
 }
 
 document.querySelectorAll(".tab").forEach((button) => {
@@ -1673,7 +1701,7 @@ document.querySelector("#memberForm").addEventListener("submit", (event) => {
   const validationError = validateMemberInput(name, wallet);
   if (validationError) return showToast(validationError);
   const directoryMatch = memberDirectory.find((candidate) => normalizeIdentity(candidate.identity) === normalizeIdentity(wallet) || candidate.name === name);
-  state.members.push({ id: `m${Date.now()}`, name, wallet, role: directoryMatch?.role ?? "" });
+  state.members.push({ id: `m${Date.now()}`, name, wallet, role: directoryMatch?.role ?? "", joinStatus: "途中参加", joinedAt: today() });
   event.target.reset();
   renderMemberSuggestions();
   renderIdentityStatus();

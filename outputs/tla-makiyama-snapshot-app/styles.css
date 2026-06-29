@@ -754,7 +754,7 @@ label {
 
 .overview-member-table {
   width: 100%;
-  min-width: 780px;
+  min-width: 1040px;
   border-collapse: collapse;
 }
 
@@ -772,7 +772,8 @@ label {
   font-weight: 800;
 }
 
-.overview-member-table input {
+.overview-member-table input,
+.overview-member-table select {
   min-height: 36px;
   margin: 0;
   font-size: 13px;
