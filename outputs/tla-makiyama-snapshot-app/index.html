@@ -4,7 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>G.D.DAOver.0</title>
-    <link rel="stylesheet" href="./styles.css">
+    <script>
+      window.__assetBase = window.location.protocol === "file:" ? "./" : "/outputs/tla-makiyama-snapshot-app/";
+      document.write(`<link rel="stylesheet" href="${window.__assetBase}styles.css">`);
+    </script>
   </head>
   <body>
     <div class="app-shell">
@@ -437,6 +440,10 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="./app.js"></script>
+    <script>
+      const appScript = document.createElement("script");
+      appScript.src = `${window.__assetBase || "./"}app.js`;
+      document.body.appendChild(appScript);
+    </script>
   </body>
 </html>

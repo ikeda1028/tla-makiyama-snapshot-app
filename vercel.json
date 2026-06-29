@@ -1,16 +1,10 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [
-    {
-      "source": "/outputs/tla-makiyama-snapshot-app",
-      "destination": "/outputs/tla-makiyama-snapshot-app/",
-      "permanent": false
-    },
+  "rewrites": [
     {
       "source": "/app",
-      "destination": "/outputs/tla-makiyama-snapshot-app/",
-      "permanent": false
+      "destination": "/outputs/tla-makiyama-snapshot-app/index.html"
     }
   ]
 }
