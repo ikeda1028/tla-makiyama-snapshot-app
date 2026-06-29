@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>G.D.DAOver.0</title>
-    <link rel="stylesheet" href="/outputs/tla-makiyama-snapshot-app/styles.css">
+    <link rel="stylesheet" href="./styles.css">
   </head>
   <body>
     <div class="app-shell">
@@ -74,6 +74,31 @@
               </div>
             </div>
             <div class="api-state" id="cloudState">ローカル保存のみ有効です</div>
+          </section>
+
+          <section class="panel overview-members-panel">
+            <div class="panel-header">
+              <div>
+                <h3>メンバー編集</h3>
+                <p class="subtle">名前、ID、役割を概況から直接編集できます。</p>
+              </div>
+              <button class="secondary-button" id="addOverviewMember" type="button">メンバー追加</button>
+            </div>
+            <div class="table-scroll">
+              <table class="overview-member-table">
+                <thead>
+                  <tr>
+                    <th>名前</th>
+                    <th>Wallet / ENS / 仮ID</th>
+                    <th>役割</th>
+                    <th>貢献pt</th>
+                    <th>投票重み</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="overviewMemberTable"></tbody>
+              </table>
+            </div>
           </section>
 
           <section class="panel ppm-planner">
@@ -412,6 +437,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="/outputs/tla-makiyama-snapshot-app/app.js"></script>
+    <script src="./app.js"></script>
   </body>
 </html>

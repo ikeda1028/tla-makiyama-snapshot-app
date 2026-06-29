@@ -748,6 +748,48 @@ label {
   color: var(--coral);
 }
 
+.table-scroll {
+  overflow-x: auto;
+}
+
+.overview-member-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+}
+
+.overview-member-table th,
+.overview-member-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #e6eaf0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.overview-member-table th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.overview-member-table input {
+  min-height: 36px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.overview-member-table .numeric-cell {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.danger-button {
+  border-color: #f1c1c1;
+  color: var(--coral);
+}
+
 .ranking-list,
 .proposal-list,
 .log-list,

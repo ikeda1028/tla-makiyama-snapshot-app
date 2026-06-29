@@ -1,9 +1,9 @@
 const initialState = {
   members: [
-    { id: "m1", name: "牧山", wallet: "0xMakiyama" },
-    { id: "m2", name: "TLA企画", wallet: "0xTLAPlan" },
-    { id: "m3", name: "現場伴走", wallet: "0xField" },
-    { id: "m4", name: "広報編集", wallet: "0xMedia" }
+    { id: "m1", name: "牧山", wallet: "0xMakiyama", role: "プロジェクトオーナー" },
+    { id: "m2", name: "TLA企画", wallet: "0xTLAPlan", role: "企画・設計" },
+    { id: "m3", name: "現場伴走", wallet: "0xField", role: "現場調整" },
+    { id: "m4", name: "広報編集", wallet: "0xMedia", role: "発信・編集" }
   ],
   contributions: [
     { id: "c1", memberId: "m1", category: "戦略", title: "6月プロジェクト方針の整理", points: 28, date: "2026-06-24" },
@@ -94,9 +94,16 @@ function loadState() {
 }
 
 function mergeState(base, saved) {
+  const baseMembersById = Object.fromEntries((base.members ?? []).map((member) => [member.id, member]));
+  const members = (saved.members ?? base.members ?? []).map((member) => ({
+    ...(baseMembersById[member.id] ?? {}),
+    ...member,
+    role: member.role ?? baseMembersById[member.id]?.role ?? ""
+  }));
   return {
     ...base,
     ...saved,
+    members,
     settings: { ...base.settings, ...(saved.settings ?? {}) },
     project: { ...base.project, ...(saved.project ?? {}) }
   };
@@ -1274,8 +1281,31 @@ function renderMembers() {
         <span class="title-line">${escapeHtml(member.name)}</span>
         <span class="pill">${powers[member.id] ?? 0}%</span>
       </div>
-      <div class="subtle">${escapeHtml(member.wallet)}</div>
+      <div class="subtle">${escapeHtml(member.role || "役割未設定")} · ${escapeHtml(member.wallet)}</div>
     </article>
+  `).join("");
+}
+
+function renderOverviewMembers() {
+  const totals = contributionTotals();
+  const powers = votingPower();
+  document.querySelector("#overviewMemberTable").innerHTML = state.members.map((member) => `
+    <tr data-member-id="${escapeHtml(member.id)}">
+      <td>
+        <input data-overview-member-field="name" type="text" maxlength="24" value="${escapeHtml(member.name)}" aria-label="${escapeHtml(member.name)}の名前">
+      </td>
+      <td>
+        <input data-overview-member-field="wallet" type="text" maxlength="64" value="${escapeHtml(member.wallet)}" aria-label="${escapeHtml(member.name)}のID">
+      </td>
+      <td>
+        <input data-overview-member-field="role" type="text" maxlength="40" value="${escapeHtml(member.role || "")}" placeholder="例：企画・設計" aria-label="${escapeHtml(member.name)}の役割">
+      </td>
+      <td class="numeric-cell">${totals[member.id] ?? 0}</td>
+      <td class="numeric-cell">${powers[member.id] ?? 0}%</td>
+      <td>
+        <button class="icon-button danger-button" data-overview-member-action="delete" type="button" title="削除" aria-label="${escapeHtml(member.name)}を削除">×</button>
+      </td>
+    </tr>
   `).join("");
 }
 
@@ -1429,6 +1459,7 @@ function render() {
   renderGanttChart();
   renderRanking();
   renderProposalSummary();
+  renderOverviewMembers();
   renderMembers();
   renderContributionLog();
   renderDecisionList();
@@ -1518,16 +1549,80 @@ function renderIdentityStatus() {
   status.className = `identity-status ${duplicate || !kind.ok ? "error" : kind.type === "temporary" ? "warn" : "valid"}`;
 }
 
-function validateMemberInput(name, identity) {
+function validateMemberValues(name, identity, currentMemberId = "") {
   if (!name || !identity) return "名前とIDを入力してください";
-  if (state.members.some((member) => member.name.trim().toLowerCase() === name.trim().toLowerCase())) {
+  if (state.members.some((member) => member.id !== currentMemberId && member.name.trim().toLowerCase() === name.trim().toLowerCase())) {
     return "同じ名前の参加者が既にいます";
   }
-  if (state.members.some((member) => normalizeIdentity(member.wallet) === normalizeIdentity(identity))) {
+  if (state.members.some((member) => member.id !== currentMemberId && normalizeIdentity(member.wallet) === normalizeIdentity(identity))) {
     return "同じIDの参加者が既にいます";
   }
   if (!identityKind(identity).ok) return "ID形式を確認してください";
   return "";
+}
+
+function validateMemberInput(name, identity) {
+  return validateMemberValues(name, identity);
+}
+
+function updateOverviewMember(row, field, value) {
+  const member = state.members.find((item) => item.id === row.dataset.memberId);
+  if (!member) return;
+  const next = {
+    ...member,
+    [field]: value.trim()
+  };
+  if (field === "role") {
+    member.role = next.role;
+  } else {
+    const validationError = validateMemberValues(next.name, next.wallet, member.id);
+    if (validationError) {
+      row.querySelector(`[data-overview-member-field="${field}"]`).value = member[field] ?? "";
+      showToast(validationError);
+      return;
+    }
+    member.name = next.name;
+    member.wallet = next.wallet;
+  }
+  persist();
+  render();
+  showToast("メンバー情報を更新しました");
+}
+
+function uniqueMemberDraft() {
+  const usedNames = new Set(state.members.map((member) => member.name.trim().toLowerCase()));
+  const usedIds = new Set(state.members.map((member) => normalizeIdentity(member.wallet)));
+  let index = state.members.length + 1;
+  while (usedNames.has(`新規メンバー${index}`.toLowerCase()) || usedIds.has(`member-${index}`)) {
+    index += 1;
+  }
+  return {
+    id: `m${Date.now()}`,
+    name: `新規メンバー${index}`,
+    wallet: `member-${index}`,
+    role: ""
+  };
+}
+
+function addOverviewMember() {
+  state.members.push(uniqueMemberDraft());
+  persist();
+  render();
+  showToast("メンバー行を追加しました");
+}
+
+function deleteOverviewMember(row) {
+  const memberId = row.dataset.memberId;
+  if (state.members.length <= 1) return showToast("メンバーは1人以上必要です");
+  const member = state.members.find((item) => item.id === memberId);
+  state.members = state.members.filter((item) => item.id !== memberId);
+  state.contributions = state.contributions.filter((item) => item.memberId !== memberId);
+  state.proposals.forEach((proposal) => {
+    delete proposal.votes[memberId];
+  });
+  persist();
+  render();
+  showToast(`${member?.name ?? "メンバー"}を削除しました`);
 }
 
 function showToast(message) {
@@ -1577,7 +1672,8 @@ document.querySelector("#memberForm").addEventListener("submit", (event) => {
   const wallet = document.querySelector("#memberWallet").value.trim();
   const validationError = validateMemberInput(name, wallet);
   if (validationError) return showToast(validationError);
-  state.members.push({ id: `m${Date.now()}`, name, wallet });
+  const directoryMatch = memberDirectory.find((candidate) => normalizeIdentity(candidate.identity) === normalizeIdentity(wallet) || candidate.name === name);
+  state.members.push({ id: `m${Date.now()}`, name, wallet, role: directoryMatch?.role ?? "" });
   event.target.reset();
   renderMemberSuggestions();
   renderIdentityStatus();
@@ -1603,6 +1699,22 @@ document.querySelector("#memberSuggestions").addEventListener("click", (event) =
   document.querySelector("#memberWallet").value = chip.dataset.identity;
   renderMemberSuggestions();
   renderIdentityStatus();
+});
+
+document.querySelector("#addOverviewMember").addEventListener("click", addOverviewMember);
+
+document.querySelector("#overviewMemberTable").addEventListener("change", (event) => {
+  const field = event.target.dataset.overviewMemberField;
+  const row = event.target.closest("tr[data-member-id]");
+  if (!field || !row) return;
+  updateOverviewMember(row, field, event.target.value);
+});
+
+document.querySelector("#overviewMemberTable").addEventListener("click", (event) => {
+  const action = event.target.dataset.overviewMemberAction;
+  const row = event.target.closest("tr[data-member-id]");
+  if (action !== "delete" || !row) return;
+  deleteOverviewMember(row);
 });
 
 document.querySelector("#generatePpmPlan").addEventListener("click", generatePpmPlanWithOpenAi);
