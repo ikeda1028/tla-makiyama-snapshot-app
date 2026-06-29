@@ -5,6 +5,14 @@
     {
       "source": "/app",
       "destination": "/outputs/tla-makiyama-snapshot-app/index.html"
+    },
+    {
+      "source": "/outputs/tla-makiyama-snapshot-app",
+      "destination": "/outputs/tla-makiyama-snapshot-app/index.html"
+    },
+    {
+      "source": "/outputs/tla-makiyama-snapshot-app/",
+      "destination": "/outputs/tla-makiyama-snapshot-app/index.html"
     }
   ]
 }
