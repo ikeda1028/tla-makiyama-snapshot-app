@@ -13,7 +13,7 @@ outputs/tla-makiyama-snapshot-app/
 GitHub Pagesでは、このリポジトリを公開し、以下のURLでアクセスします。
 
 ```text
-https://<github-user>.github.io/<repository>/outputs/tla-makiyama-snapshot-app/
+https://<github-user>.github.io/<repository>/
 ```
 
 ## ローカル起動
