@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleAsanaApi, sendJson } from "../lib/asana-core.mjs";
+import { handleOpenAiApi } from "../lib/openai-core.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const appRoot = join(root, "outputs", "tla-makiyama-snapshot-app");
@@ -57,8 +58,10 @@ http.createServer(async (req, res) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   try {
     if (url.pathname.startsWith("/api/")) {
-      const handled = await handleAsanaApi(req, res, url);
-      if (handled !== false) return;
+      const asanaHandled = await handleAsanaApi(req, res, url);
+      if (asanaHandled !== false) return;
+      const openAiHandled = await handleOpenAiApi(req, res, url);
+      if (openAiHandled !== false) return;
     }
     return staticFile(res, url.pathname);
   } catch (error) {

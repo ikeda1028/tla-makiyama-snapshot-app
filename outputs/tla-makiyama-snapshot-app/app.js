@@ -614,10 +614,14 @@ function setAsanaApiState(message, mode = "") {
   element.className = `api-state ${mode}`;
 }
 
-async function callAsanaApi(path, options = {}) {
+function appApiBase() {
   syncAsanaApiSettings();
   const fallbackBase = window.location.protocol.startsWith("http") ? window.location.origin : "";
-  const apiBase = state.settings.asanaApiBase || fallbackBase;
+  return state.settings.asanaApiBase || fallbackBase;
+}
+
+async function callAppApi(path, options = {}) {
+  const apiBase = appApiBase();
   if (!apiBase) throw new Error("APIサーバーURLを入力してください。Vercel公開URLでは空欄でも使えます");
   const response = await fetch(`${apiBase}${path}`, {
     ...options,
@@ -631,12 +635,39 @@ async function callAsanaApi(path, options = {}) {
   return data;
 }
 
+async function callAsanaApi(path, options = {}) {
+  return callAppApi(path, options);
+}
+
 async function checkAsanaApiConnection() {
   setAsanaApiState("Asana APIへ接続確認中...", "warn");
   try {
     const data = await callAsanaApi("/api/asana/me");
     persist();
     setAsanaApiState(`接続OK: ${data.name || data.email || "Asanaユーザー"}`, "ready");
+  } catch (error) {
+    setAsanaApiState(error.message, "error");
+  }
+}
+
+async function loadAsanaWorkspaces() {
+  setAsanaApiState("Asana Workspaceを取得中...", "warn");
+  try {
+    const data = await callAsanaApi("/api/asana/workspaces");
+    const workspaces = data.workspaces ?? [];
+    const select = document.querySelector("#asanaWorkspaceSelect");
+    select.innerHTML = workspaces.length
+      ? workspaces.map((workspace) => `<option value="${escapeHtml(workspace.gid)}">${escapeHtml(workspace.name)} / ${escapeHtml(workspace.gid)}</option>`).join("")
+      : `<option value="">Workspaceが見つかりません</option>`;
+    if (workspaces.length) {
+      state.settings.asanaWorkspaceGid = workspaces[0].gid;
+      document.querySelector("#asanaWorkspaceGid").value = workspaces[0].gid;
+      select.value = workspaces[0].gid;
+      persist();
+      setAsanaApiState(`Workspace取得OK: ${workspaces[0].name}`, "ready");
+    } else {
+      setAsanaApiState("Workspaceが見つかりませんでした", "error");
+    }
   } catch (error) {
     setAsanaApiState(error.message, "error");
   }
@@ -1089,14 +1120,6 @@ async function generatePpmPlanWithOpenAi() {
     return;
   }
   const apiKey = document.querySelector("#openAiKey").value.trim();
-  if (!apiKey) {
-    state.project.analysis = buildLocalPpmAnalysis();
-    persist();
-    renderPpmResult(state.project.analysis);
-    setAiState("APIキー未入力のため、牧山式PPMのローカル雛形を生成しました。", "ready");
-    showToast("PPM雛形を生成しました");
-    return;
-  }
 
   setAiState("OpenAI APIでPPM設計中です...", "loading");
   const payload = {
@@ -1125,7 +1148,31 @@ async function generatePpmPlanWithOpenAi() {
   };
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const data = await callAppApi("/api/openai/ppm-plan", {
+      method: "POST",
+      body: JSON.stringify({
+        project_name: state.project.name,
+        summary: state.project.summary,
+        model: state.project.model || "gpt-5.5"
+      })
+    });
+    state.project.analysis = data.analysis;
+    recalculateProjectValue();
+    persist();
+    render();
+    setAiState("サーバー側OpenAI APIによるPPM設計が完了しました。", "ready");
+    showToast("AI設計が完了しました");
+  } catch (serverError) {
+    if (!apiKey) {
+      state.project.analysis = buildLocalPpmAnalysis();
+      persist();
+      render();
+      setAiState(`サーバー側AIを使えないため、PPM雛形を表示しました: ${serverError.message}`, "ready");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -1146,11 +1193,12 @@ async function generatePpmPlanWithOpenAi() {
     render();
     setAiState("OpenAI APIによるPPM設計が完了しました。", "ready");
     showToast("AI設計が完了しました");
-  } catch (error) {
-    state.project.analysis = buildLocalPpmAnalysis();
-    persist();
-    render();
-    setAiState(`API呼び出しに失敗したため、PPM雛形を表示しました: ${error.message}`, "ready");
+    } catch (clientError) {
+      state.project.analysis = buildLocalPpmAnalysis();
+      persist();
+      render();
+      setAiState(`API呼び出しに失敗したため、PPM雛形を表示しました: ${clientError.message}`, "ready");
+    }
   }
 }
 
@@ -1517,9 +1565,15 @@ document.querySelector("#exportAsanaCsv").addEventListener("click", exportAsanaC
 document.querySelector("#createSnapshotProposalFromResults").addEventListener("click", createSnapshotProposalFromResults);
 document.querySelector("#asanaResultFile").addEventListener("change", handleAsanaResultUpload);
 document.querySelector("#checkAsanaApi").addEventListener("click", checkAsanaApiConnection);
+document.querySelector("#loadAsanaWorkspaces").addEventListener("click", loadAsanaWorkspaces);
 document.querySelector("#createAsanaProjectApi").addEventListener("click", createAsanaProjectViaApi);
 document.querySelector("#pushTasksToAsanaApi").addEventListener("click", pushTasksToAsanaViaApi);
 document.querySelector("#pullAsanaResultsApi").addEventListener("click", pullAsanaResultsViaApi);
+document.querySelector("#asanaWorkspaceSelect").addEventListener("change", (event) => {
+  state.settings.asanaWorkspaceGid = event.target.value;
+  document.querySelector("#asanaWorkspaceGid").value = event.target.value;
+  persist();
+});
 
 document.querySelector("#taskEditorList").addEventListener("input", (event) => {
   const field = event.target.dataset.taskField;

@@ -83,14 +83,14 @@
               </label>
               <label>
                 OpenAI APIキー
-                <input id="openAiKey" type="password" autocomplete="off" placeholder="sk-...（保存しません）">
+                <input id="openAiKey" type="password" autocomplete="off" placeholder="Vercelでは空欄でOK / ローカル検証用">
               </label>
               <div class="planner-actions">
                 <button class="primary-button" id="generatePpmPlan" type="button">AIで設計</button>
                 <button class="secondary-button" id="localPpmPlan" type="button">PPM雛形</button>
               </div>
             </div>
-            <p class="subtle">本番運用ではAPIキーをブラウザに置かず、サーバー側のプロキシでOpenAI APIを呼び出してください。</p>
+            <p class="subtle">Vercel公開版ではサーバー側のOpenAI APIを使います。APIキー欄はローカル検証用です。</p>
             <div class="ai-state" id="aiState">未分析</div>
           </section>
 
@@ -213,12 +213,19 @@
                   <input id="asanaWorkspaceGid" type="text" placeholder="新規プロジェクト作成時に使用">
                 </label>
                 <label>
+                  Workspace候補
+                  <select id="asanaWorkspaceSelect">
+                    <option value="">API接続後に取得できます</option>
+                  </select>
+                </label>
+                <label>
                   Project GID
                   <input id="asanaProjectGid" type="text" placeholder="既存AsanaプロジェクトのGID">
                 </label>
               </div>
               <div class="panel-actions">
                 <button class="secondary-button" id="checkAsanaApi" type="button">API接続確認</button>
+                <button class="secondary-button" id="loadAsanaWorkspaces" type="button">Workspace取得</button>
                 <button class="secondary-button" id="createAsanaProjectApi" type="button">Asanaプロジェクト作成</button>
                 <button class="primary-button" id="pushTasksToAsanaApi" type="button">タスクを直接送信</button>
                 <button class="secondary-button" id="pullAsanaResultsApi" type="button">成果を同期</button>
