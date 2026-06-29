@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TLA・牧山 Snapshot Governance</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">TM</div>
+          <div>
+            <h1>TLA・牧山</h1>
+            <p>Snapshot Governance</p>
+          </div>
+        </div>
+
+        <nav class="tabs" aria-label="メイン">
+          <button class="tab active" data-view="overview" type="button">
+            <span class="icon">◆</span>
+            概況
+          </button>
+          <button class="tab" data-view="contribution" type="button">
+            <span class="icon">●</span>
+            貢献度
+          </button>
+          <button class="tab" data-view="decision" type="button">
+            <span class="icon">✓</span>
+            意思決定
+          </button>
+          <button class="tab" data-view="snapshot" type="button">
+            <span class="icon">↗</span>
+            Snapshot
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span class="status-dot"></span>
+          <span id="saveState">保存済み</span>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Project room</p>
+            <h2 id="viewTitle">概況</h2>
+          </div>
+          <div class="toolbar">
+            <button class="icon-button" id="resetDemo" type="button" title="初期データに戻す" aria-label="初期データに戻す">↺</button>
+            <button class="primary-button" id="downloadJson" type="button">JSON出力</button>
+          </div>
+        </header>
+
+        <section class="view active" id="overview">
+          <section class="panel ppm-planner">
+            <div class="panel-header">
+              <div>
+                <h3>牧山式PPM AI設計</h3>
+                <p class="subtle">プロジェクト名と概要から、タスク、作業量、価値づけ、初期リスクを設計します。</p>
+              </div>
+              <span class="pill coral">OpenAI API</span>
+            </div>
+            <div class="planner-grid">
+              <label>
+                プロジェクト名
+                <input id="projectName" type="text" maxlength="80" placeholder="例：TLA・牧山チーム 地域連携プロジェクト">
+              </label>
+              <label>
+                APIモデル
+                <input id="openAiModel" type="text" value="gpt-5.5" autocomplete="off">
+              </label>
+              <label class="wide">
+                プロジェクト概要
+                <textarea id="projectSummary" rows="4" maxlength="900" placeholder="目的、対象者、成果物、期限、制約、関係者などを入力"></textarea>
+              </label>
+              <label class="wide upload-box">
+                概要ファイル
+                <input id="projectFile" type="file" accept=".txt,.md,.json,.csv,.docx,text/plain,text/markdown,application/json,text/csv,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                <span id="fileStatus">txt / md / json / csv / docx を読み込めます</span>
+              </label>
+              <label>
+                OpenAI APIキー
+                <input id="openAiKey" type="password" autocomplete="off" placeholder="sk-...（保存しません）">
+              </label>
+              <div class="planner-actions">
+                <button class="primary-button" id="generatePpmPlan" type="button">AIで設計</button>
+                <button class="secondary-button" id="localPpmPlan" type="button">PPM雛形</button>
+              </div>
+            </div>
+            <p class="subtle">本番運用ではAPIキーをブラウザに置かず、サーバー側のプロキシでOpenAI APIを呼び出してください。</p>
+            <div class="ai-state" id="aiState">未分析</div>
+          </section>
+
+          <section class="panel workflow-panel">
+            <div class="panel-header">
+              <div>
+                <h3>運用フロー</h3>
+                <p class="subtle">PPM設計からAsana実行、成果承認、Snapshot意思決定までをつなぎます。</p>
+              </div>
+              <span class="pill" id="workflowStage">設計前</span>
+            </div>
+            <div class="workflow-steps" id="workflowSteps"></div>
+          </section>
+
+          <section class="panel ppm-result-panel">
+            <div class="panel-header">
+              <h3>全体像と価値づけ</h3>
+              <button class="secondary-button" id="addAiTasksToLog" type="button">主要タスクを貢献ログへ追加</button>
+            </div>
+            <div class="ppm-result" id="ppmResult"></div>
+          </section>
+
+          <section class="panel ppm-task-editor-panel">
+            <div class="panel-header">
+              <div>
+                <h3>詳細タスク一覧</h3>
+                <p class="subtle">AIが生成したタスクを編集し、作業量と価値づけを調整できます。</p>
+              </div>
+              <div class="panel-actions">
+                <button class="secondary-button" id="exportTaskCsv" type="button">CSV出力</button>
+                <button class="secondary-button" id="addManualTask" type="button">タスク追加</button>
+              </div>
+            </div>
+            <div class="task-point-summary" id="taskPointSummary"></div>
+            <div class="task-editor-list" id="taskEditorList"></div>
+          </section>
+
+          <div class="metrics-grid">
+            <article class="metric">
+              <span class="metric-label">総貢献ポイント</span>
+              <strong id="totalPoints">0</strong>
+              <small>今期スナップショット対象</small>
+            </article>
+            <article class="metric">
+              <span class="metric-label">参加メンバー</span>
+              <strong id="memberCount">0</strong>
+              <small>投票権あり</small>
+            </article>
+            <article class="metric">
+              <span class="metric-label">進行中の提案</span>
+              <strong id="openProposalCount">0</strong>
+              <small>意思決定待ち</small>
+            </article>
+            <article class="metric">
+              <span class="metric-label">合意形成率</span>
+              <strong id="consensusRate">0%</strong>
+              <small>可決済み提案</small>
+            </article>
+          </div>
+
+          <div class="split-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <h3>貢献ランキング</h3>
+                <span class="pill">Voting power</span>
+              </div>
+              <div class="ranking-list" id="rankingList"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>意思決定ボード</h3>
+                <span class="pill amber">Live</span>
+              </div>
+              <div class="proposal-list" id="proposalList"></div>
+            </section>
+          </div>
+
+          <section class="panel gantt-panel">
+            <div class="panel-header">
+              <div>
+                <h3>ガントチャート</h3>
+                <p class="subtle">詳細タスクの作業量ptから期間を自動配置します。</p>
+              </div>
+              <span class="pill">Timeline</span>
+            </div>
+            <div class="gantt-chart" id="ganttChart"></div>
+          </section>
+
+          <section class="panel asana-panel">
+            <div class="panel-header">
+              <div>
+                <h3>Asana連携</h3>
+                <p class="subtle">設計タスクを書き出し、Asana側の成果CSVを取り込み、Snapshot提案にします。</p>
+              </div>
+              <div class="panel-actions">
+                <button class="secondary-button" id="exportAsanaCsv" type="button">Asana CSV出力</button>
+                <button class="primary-button" id="createSnapshotProposalFromResults" type="button">Snapshot提案を作成</button>
+              </div>
+            </div>
+            <div class="asana-grid">
+              <label class="upload-box">
+                Asana成果CSV
+                <input id="asanaResultFile" type="file" accept=".csv,text/csv">
+                <span id="asanaStatus">Asanaから出力したCSVを読み込めます</span>
+              </label>
+              <div>
+                <div class="asana-summary" id="asanaSummary"></div>
+                <div class="asana-next" id="asanaNextAction"></div>
+              </div>
+            </div>
+            <div class="asana-api-box">
+              <div class="api-config-grid">
+                <label>
+                  APIサーバーURL
+                  <input id="asanaApiBase" type="url" placeholder="例：https://your-app.vercel.app">
+                </label>
+                <label>
+                  Workspace GID
+                  <input id="asanaWorkspaceGid" type="text" placeholder="新規プロジェクト作成時に使用">
+                </label>
+                <label>
+                  Project GID
+                  <input id="asanaProjectGid" type="text" placeholder="既存AsanaプロジェクトのGID">
+                </label>
+              </div>
+              <div class="panel-actions">
+                <button class="secondary-button" id="checkAsanaApi" type="button">API接続確認</button>
+                <button class="secondary-button" id="createAsanaProjectApi" type="button">Asanaプロジェクト作成</button>
+                <button class="primary-button" id="pushTasksToAsanaApi" type="button">タスクを直接送信</button>
+                <button class="secondary-button" id="pullAsanaResultsApi" type="button">成果を同期</button>
+              </div>
+              <div class="api-state" id="asanaApiState">API未接続</div>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="contribution">
+          <div class="two-column">
+            <form class="panel form-panel" id="contributionForm">
+              <div class="panel-header">
+                <h3>貢献を記録</h3>
+              </div>
+              <label>
+                メンバー
+                <select id="contributionMember"></select>
+              </label>
+              <label>
+                カテゴリ
+                <select id="contributionCategory">
+                  <option value="戦略">戦略</option>
+                  <option value="実装">実装</option>
+                  <option value="調査">調査</option>
+                  <option value="調整">調整</option>
+                  <option value="発信">発信</option>
+                </select>
+              </label>
+              <label>
+                内容
+                <input id="contributionTitle" type="text" maxlength="64" placeholder="例：提案書ドラフト作成">
+              </label>
+              <label>
+                ポイント
+                <input id="contributionPoints" type="number" min="1" max="100" value="12">
+              </label>
+              <button class="primary-button" type="submit">追加</button>
+            </form>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>メンバー設定</h3>
+              </div>
+              <form class="member-row" id="memberForm">
+                <div class="member-field">
+                  <input id="memberName" type="text" maxlength="24" placeholder="名前" autocomplete="off" aria-describedby="memberHints">
+                  <div class="suggestion-list" id="memberSuggestions" aria-label="参加者候補"></div>
+                </div>
+                <div class="member-field">
+                  <input id="memberWallet" type="text" maxlength="64" placeholder="Wallet / ENS / 仮ID" autocomplete="off">
+                  <div class="identity-status" id="identityStatus">名前を入力すると候補を表示します</div>
+                </div>
+                <button class="icon-button" type="submit" title="追加" aria-label="追加">＋</button>
+              </form>
+              <p class="subtle" id="memberHints">候補から選ぶか、0x形式のWallet、.ethのENS、または仮IDを入力できます。</p>
+              <div class="member-table" id="memberTable"></div>
+            </section>
+          </div>
+
+          <section class="panel full">
+            <div class="panel-header">
+              <h3>貢献ログ</h3>
+              <div class="segmented" role="group" aria-label="カテゴリフィルター">
+                <button class="segment active" data-filter="all" type="button">全て</button>
+                <button class="segment" data-filter="戦略" type="button">戦略</button>
+                <button class="segment" data-filter="実装" type="button">実装</button>
+                <button class="segment" data-filter="調整" type="button">調整</button>
+              </div>
+            </div>
+            <div class="log-list" id="contributionLog"></div>
+          </section>
+        </section>
+
+        <section class="view" id="decision">
+          <div class="two-column">
+            <form class="panel form-panel" id="proposalForm">
+              <div class="panel-header">
+                <h3>提案を作成</h3>
+              </div>
+              <label>
+                提案名
+                <input id="proposalTitle" type="text" maxlength="72" placeholder="例：7月の重点施策を決める">
+              </label>
+              <label>
+                判断基準
+                <textarea id="proposalBody" rows="5" maxlength="240" placeholder="目的、採択条件、期限など"></textarea>
+              </label>
+              <label>
+                可決ライン
+                <input id="proposalThreshold" type="number" min="50" max="90" value="60">
+              </label>
+              <button class="primary-button" type="submit">提案追加</button>
+            </form>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h3>投票</h3>
+                <span class="pill">Weighted</span>
+              </div>
+              <label class="compact-label">
+                提案
+                <select id="voteProposal"></select>
+              </label>
+              <label class="compact-label">
+                投票者
+                <select id="voteMember"></select>
+              </label>
+              <div class="vote-actions">
+                <button class="vote yes" data-choice="yes" type="button">賛成</button>
+                <button class="vote no" data-choice="no" type="button">反対</button>
+                <button class="vote abstain" data-choice="abstain" type="button">棄権</button>
+              </div>
+              <div id="votePreview" class="vote-preview"></div>
+            </section>
+          </div>
+
+          <section class="panel full">
+            <div class="panel-header">
+              <h3>提案一覧</h3>
+              <button class="secondary-button" id="closePassed" type="button">可決済みを確定</button>
+            </div>
+            <div class="decision-list" id="decisionList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="snapshot">
+          <div class="snapshot-layout">
+            <section class="panel">
+              <div class="panel-header">
+                <h3>Snapshot スペース設定</h3>
+              </div>
+              <label>
+                Space
+                <input id="spaceId" type="text" value="tla-makiyama.eth">
+              </label>
+              <label>
+                Network
+                <select id="networkId">
+                  <option value="1">Ethereum</option>
+                  <option value="137">Polygon</option>
+                  <option value="10">Optimism</option>
+                  <option value="42161">Arbitrum</option>
+                </select>
+              </label>
+              <label class="checkbox-label">
+                <input id="useContributionWeight" type="checkbox" checked>
+                貢献度を投票重みに使う
+              </label>
+              <button class="primary-button" id="copySnapshotPayload" type="button">Payloadコピー</button>
+            </section>
+
+            <section class="panel code-panel">
+              <div class="panel-header">
+                <h3>Snapshot Payload</h3>
+                <span class="pill coral">JSON</span>
+              </div>
+              <pre id="snapshotPayload"></pre>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js"></script>
+  </body>
+</html>

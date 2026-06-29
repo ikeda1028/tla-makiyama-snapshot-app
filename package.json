@@ -1,0 +1,10 @@
+{
+  "name": "tla-makiyama-snapshot-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node api/asana-server.mjs",
+    "check": "node --check outputs/tla-makiyama-snapshot-app/app.js && node --check api/asana-server.mjs"
+  }
+}
