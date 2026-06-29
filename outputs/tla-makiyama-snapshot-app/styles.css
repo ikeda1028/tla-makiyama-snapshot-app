@@ -461,7 +461,7 @@ label {
 
 .task-point-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -507,7 +507,7 @@ label {
 
 .task-edit-head {
   display: grid;
-  grid-template-columns: minmax(180px, 1.3fr) 120px 44px;
+  grid-template-columns: minmax(180px, 1.3fr) minmax(150px, 0.8fr) 120px 44px;
   gap: 8px;
   align-items: end;
 }

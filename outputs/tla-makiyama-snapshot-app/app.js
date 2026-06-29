@@ -212,6 +212,7 @@ function renderPpmResult(analysis) {
     return;
   }
   const tasks = Array.isArray(analysis.tasks) ? analysis.tasks : [];
+  ensureTaskIds(tasks);
   const risks = Array.isArray(analysis.risks) ? analysis.risks : [];
   const decisions = Array.isArray(analysis.decision_points) ? analysis.decision_points : [];
   container.innerHTML = `
@@ -242,7 +243,7 @@ function renderPpmResult(analysis) {
             <span class="pill amber">${escapeHtml(task.parameter ?? "PARAM")}</span>
             <span class="pill">${Number(task.workload_points ?? 10)} pt</span>
           </div>
-          <div class="subtle">成果物: ${escapeHtml(task.deliverable ?? "未設定")}</div>
+          <div class="subtle">担当: ${escapeHtml(taskAssigneeName(task))} · 成果物: ${escapeHtml(task.deliverable ?? "未設定")}</div>
         </article>
       `).join("")}
     </div>
@@ -275,6 +276,12 @@ function renderTaskEditor() {
         <label>
           タスク名
           <input data-task-field="title" type="text" maxlength="80" value="${escapeHtml(task.title ?? "")}">
+        </label>
+        <label>
+          担当者
+          <select data-task-field="assignee_member_id">
+            ${taskAssigneeOptions(task.assignee_member_id)}
+          </select>
         </label>
         <label>
           作業量pt
@@ -341,6 +348,9 @@ function renderTaskEditor() {
 function ensureTaskIds(tasks) {
   tasks.forEach((task, index) => {
     if (!task.id) task.id = `ppm-${Date.now()}-${index + 1}`;
+    if (!task.assignee_member_id || !state.members.some((member) => member.id === task.assignee_member_id)) {
+      task.assignee_member_id = state.members[index % Math.max(state.members.length, 1)]?.id ?? "";
+    }
     if (!task.status) task.status = "未着手";
     if (task.actual_points == null) task.actual_points = 0;
     if (task.result_note == null) task.result_note = "";
@@ -348,17 +358,39 @@ function ensureTaskIds(tasks) {
   });
 }
 
+function taskAssigneeOptions(selectedId = "") {
+  const empty = `<option value="" ${selectedId ? "" : "selected"}>未設定</option>`;
+  return [
+    empty,
+    ...state.members.map((member) => `
+      <option value="${escapeHtml(member.id)}" ${member.id === selectedId ? "selected" : ""}>
+        ${escapeHtml(member.name)}${member.joinStatus === "途中参加" ? "（途中参加）" : ""}
+      </option>
+    `)
+  ].join("");
+}
+
+function taskAssignee(task) {
+  return state.members.find((member) => member.id === task.assignee_member_id) ?? null;
+}
+
+function taskAssigneeName(task) {
+  return taskAssignee(task)?.name ?? "未設定";
+}
+
 function renderTaskPointSummary(tasks) {
   const container = document.querySelector("#taskPointSummary");
   const workload = tasks.reduce((sum, task) => sum + Number(task.workload_points ?? 0), 0);
   const value = tasks.reduce((sum, task) => sum + Number(task.value_points ?? task.workload_points ?? 0), 0);
   const highPriority = tasks.filter((task) => task.priority === "高").length;
+  const unassigned = tasks.filter((task) => !task.assignee_member_id).length;
   const average = tasks.length ? Math.round((workload / tasks.length) * 10) / 10 : 0;
   container.innerHTML = `
     <div class="task-point-box"><span>タスク数</span><strong>${tasks.length}</strong></div>
     <div class="task-point-box"><span>作業量合計</span><strong>${workload} pt</strong></div>
     <div class="task-point-box"><span>価値合計</span><strong>${value} pt</strong></div>
     <div class="task-point-box"><span>平均作業量 / 高優先</span><strong>${average} / ${highPriority}</strong></div>
+    <div class="task-point-box"><span>担当未設定</span><strong>${unassigned}</strong></div>
   `;
 }
 
@@ -443,10 +475,13 @@ function csvEscape(value) {
 function exportTaskCsv() {
   const tasks = state.project.analysis?.tasks ?? [];
   if (!tasks.length) return showToast("出力できる詳細タスクがありません");
-  const header = ["No", "タスク名", "PPM段階", "パラメータ", "優先度", "作業量pt", "価値pt", "成果物", "説明"];
+  ensureTaskIds(tasks);
+  const header = ["No", "タスク名", "担当者", "担当者ID", "PPM段階", "パラメータ", "優先度", "作業量pt", "価値pt", "成果物", "説明"];
   const rows = tasks.map((task, index) => [
     index + 1,
     task.title,
+    taskAssigneeName(task),
+    task.assignee_member_id,
     task.ppm_stage,
     task.parameter,
     task.priority,
@@ -486,10 +521,14 @@ function exportAsanaCsv() {
   const rows = tasks.map((task, index) => {
     const dueDay = new Date();
     dueDay.setDate(dueDay.getDate() + Math.max(2, Math.ceil(Number(task.workload_points ?? 10) / 4)) + index);
+    const assignee = taskAssignee(task);
     return [
       task.title,
       [
         `PPM Task ID: ${task.id}`,
+        `Assignee: ${assignee?.name ?? "未設定"}`,
+        `Assignee Member ID: ${task.assignee_member_id ?? ""}`,
+        `Assignee Identity: ${assignee?.wallet ?? ""}`,
         `PPM Stage: ${task.ppm_stage}`,
         `Parameter: ${task.parameter}`,
         `Workload: ${Number(task.workload_points ?? 0)} pt`,
@@ -501,7 +540,7 @@ function exportAsanaCsv() {
       ].join("\n"),
       task.ppm_stage,
       `PPM,${task.priority ?? "中"},${task.parameter ?? ""}`,
-      "",
+      assignee?.name ?? "",
       dueDay.toISOString().slice(0, 10),
       task.id,
       Number(task.workload_points ?? 0),
@@ -696,11 +735,15 @@ function asanaTaskPayload() {
   return tasks.map((task, index) => {
     const dueDay = new Date();
     dueDay.setDate(dueDay.getDate() + Math.max(2, Math.ceil(Number(task.workload_points ?? 10) / 4)) + index);
+    const assignee = taskAssignee(task);
     return {
       local_id: task.id,
       name: task.title,
       notes: [
         `PPM Task ID: ${task.id}`,
+        `Assignee: ${assignee?.name ?? "未設定"}`,
+        `Assignee Member ID: ${task.assignee_member_id ?? ""}`,
+        `Assignee Identity: ${assignee?.wallet ?? ""}`,
         `PPM Stage: ${task.ppm_stage}`,
         `Parameter: ${task.parameter}`,
         `Workload: ${Number(task.workload_points ?? 0)} pt`,
@@ -710,6 +753,9 @@ function asanaTaskPayload() {
         "",
         `Deliverable: ${task.deliverable ?? ""}`
       ].join("\n"),
+      assignee_member_id: task.assignee_member_id ?? "",
+      assignee_name: assignee?.name ?? "",
+      assignee_identity: assignee?.wallet ?? "",
       section_name: task.ppm_stage,
       due_on: dueDay.toISOString().slice(0, 10)
     };
@@ -812,7 +858,7 @@ function createSnapshotProposalFromResults() {
   if (alreadyOpen) return showToast("承認用の提案はすでに作成済みです");
   const topTasks = progress.completedTasks
     .slice(0, 6)
-    .map((task) => `・${task.title}（${Number(task.value_points ?? task.workload_points ?? 0)}pt）`)
+    .map((task) => `・${task.title} / 担当: ${taskAssigneeName(task)}（${Number(task.value_points ?? task.workload_points ?? 0)}pt）`)
     .join("\n");
   state.proposals.push({
     id: `p${Date.now()}`,
@@ -856,6 +902,7 @@ function ganttRows(tasks) {
 
 function renderGanttChart() {
   const tasks = state.project.analysis?.tasks ?? [];
+  ensureTaskIds(tasks);
   const container = document.querySelector("#ganttChart");
   if (!tasks.length) {
     container.innerHTML = `<div class="gantt-empty">AI設計またはPPM雛形を実行すると、ガントチャートを表示します。</div>`;
@@ -880,7 +927,7 @@ function renderGanttChart() {
         <div class="gantt-row">
           <div>
             <div class="gantt-title">${escapeHtml(row.task.title ?? "未設定タスク")}</div>
-            <div class="gantt-meta">${escapeHtml(row.task.ppm_stage ?? "")} · ${escapeHtml(row.task.priority ?? "中")}</div>
+            <div class="gantt-meta">${escapeHtml(row.task.ppm_stage ?? "")} · ${escapeHtml(row.task.priority ?? "中")} · 担当 ${escapeHtml(taskAssigneeName(row.task))}</div>
           </div>
           <div class="gantt-track">
             <span class="gantt-bar stage-${Math.max(stageIndex, 0)}" style="left:${left}%;width:${width}%;"></span>
@@ -925,6 +972,7 @@ function addManualTask() {
     deliverable: "成果物を入力",
     workload_points: 10,
     value_points: 10,
+    assignee_member_id: state.members[0]?.id ?? "",
     actual_points: 0,
     status: "未着手",
     result_note: "",
@@ -1226,7 +1274,7 @@ function addAiTasksToContributionLog() {
   tasks.slice(0, 6).forEach((task, index) => {
     state.contributions.push({
       id: `c${Date.now()}-${index}`,
-      memberId: defaultMember,
+      memberId: task.assignee_member_id || defaultMember,
       category: task.parameter === "DECISION MAKING SYSTEM" ? "戦略" : task.parameter === "PROCESS MANAGEMENT" ? "調整" : "調査",
       title: task.title,
       points: Number(task.workload_points ?? 10),
