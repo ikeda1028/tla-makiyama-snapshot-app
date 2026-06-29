@@ -616,8 +616,10 @@ function setAsanaApiState(message, mode = "") {
 
 async function callAsanaApi(path, options = {}) {
   syncAsanaApiSettings();
-  if (!state.settings.asanaApiBase) throw new Error("APIサーバーURLを入力してください");
-  const response = await fetch(`${state.settings.asanaApiBase}${path}`, {
+  const fallbackBase = window.location.protocol.startsWith("http") ? window.location.origin : "";
+  const apiBase = state.settings.asanaApiBase || fallbackBase;
+  if (!apiBase) throw new Error("APIサーバーURLを入力してください。Vercel公開URLでは空欄でも使えます");
+  const response = await fetch(`${apiBase}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",

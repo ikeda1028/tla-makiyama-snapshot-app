@@ -206,7 +206,7 @@
               <div class="api-config-grid">
                 <label>
                   APIサーバーURL
-                  <input id="asanaApiBase" type="url" placeholder="例：https://your-app.vercel.app">
+                  <input id="asanaApiBase" type="url" placeholder="Vercelでは空欄でOK / ローカル例：http://127.0.0.1:8787">
                 </label>
                 <label>
                   Workspace GID
@@ -223,7 +223,7 @@
                 <button class="primary-button" id="pushTasksToAsanaApi" type="button">タスクを直接送信</button>
                 <button class="secondary-button" id="pullAsanaResultsApi" type="button">成果を同期</button>
               </div>
-              <div class="api-state" id="asanaApiState">API未接続</div>
+              <div class="api-state" id="asanaApiState">Vercel公開時はAPIサーバーURLを空欄のまま使えます</div>
             </div>
           </section>
         </section>

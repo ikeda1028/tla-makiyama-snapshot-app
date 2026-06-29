@@ -5,6 +5,6 @@
   "type": "module",
   "scripts": {
     "start": "node api/asana-server.mjs",
-    "check": "node --check outputs/tla-makiyama-snapshot-app/app.js && node --check api/asana-server.mjs"
+    "check": "node --check outputs/tla-makiyama-snapshot-app/app.js && node --check api/asana-server.mjs && node --check lib/asana-core.mjs && node --check api/asana/me.js && node --check api/asana/projects.js && node --check api/asana/tasks.js && node --check api/asana/tasks/bulk.js"
   }
 }
