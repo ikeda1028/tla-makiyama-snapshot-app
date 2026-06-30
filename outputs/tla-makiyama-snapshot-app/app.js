@@ -1,6 +1,6 @@
 const initialState = {
   members: [
-    { id: "m1", name: "牧山", wallet: "0xMakiyama", role: "プロジェクトオーナー", joinStatus: "初期", joinedAt: "2026-06-24" },
+    { id: "m1", name: "鈴木太郎", wallet: "suzuki-taro.eth", role: "プロジェクトオーナー", joinStatus: "初期", joinedAt: "2026-06-24" },
     { id: "m2", name: "TLA企画", wallet: "0xTLAPlan", role: "企画・設計", joinStatus: "初期", joinedAt: "2026-06-24" },
     { id: "m3", name: "現場伴走", wallet: "0xField", role: "現場調整", joinStatus: "初期", joinedAt: "2026-06-24" },
     { id: "m4", name: "広報編集", wallet: "0xMedia", role: "発信・編集", joinStatus: "初期", joinedAt: "2026-06-24" }
@@ -33,17 +33,17 @@ const initialState = {
     }
   ],
   settings: {
-    spaceId: "tla-makiyama.eth",
+    spaceId: "tla-suzuki.eth",
     networkId: "137",
     useContributionWeight: true,
     asanaApiBase: "",
     asanaWorkspaceGid: "",
     asanaProjectGid: "",
-    cloudWorkspaceKey: "tla-makiyama-main"
+    cloudWorkspaceKey: "tla-suzuki-main"
   },
   project: {
-    name: "TLA・牧山チーム PPM導入",
-    summary: "Snapshotを使い、TLA・牧山チームのプロジェクト貢献度、意思決定、価値づけを透明に管理する。",
+    name: "TLA・鈴木チーム PPM導入",
+    summary: "Snapshotを使い、TLA・鈴木チームのプロジェクト貢献度、意思決定、価値づけを透明に管理する。",
     model: "gpt-5.5",
     analysis: null
   },
@@ -83,7 +83,7 @@ let state = loadState();
 let activeFilter = "all";
 
 const memberDirectory = [
-  { name: "牧山", identity: "makiyama.eth", role: "プロジェクトオーナー" },
+  { name: "鈴木太郎", identity: "suzuki-taro.eth", role: "プロジェクトオーナー" },
   { name: "TLA企画", identity: "tla-planning.eth", role: "企画・設計" },
   { name: "現場伴走", identity: "field-support.eth", role: "現場調整" },
   { name: "広報編集", identity: "media-editor.eth", role: "発信・編集" },
@@ -135,7 +135,7 @@ function mergeState(base, saved) {
     joinStatus: member.joinStatus ?? baseMembersById[member.id]?.joinStatus ?? "初期",
     joinedAt: member.joinedAt ?? baseMembersById[member.id]?.joinedAt ?? ""
   }));
-  return {
+  const merged = {
     ...base,
     ...saved,
     members,
@@ -151,6 +151,35 @@ function mergeState(base, saved) {
       updates: saved.community?.updates ?? base.community.updates
     }
   };
+  return migrateSuzukiDefaults(merged);
+}
+
+function migrateSuzukiDefaults(nextState) {
+  nextState.members = (nextState.members ?? []).map((member) => {
+    if (member.id !== "m1") return member;
+    return {
+      ...member,
+      name: member.name === "牧山" ? "鈴木太郎" : member.name,
+      wallet: member.wallet === "0xMakiyama" ? "suzuki-taro.eth" : member.wallet
+    };
+  });
+  if (nextState.settings?.spaceId === "tla-makiyama.eth") nextState.settings.spaceId = "tla-suzuki.eth";
+  if (nextState.settings?.cloudWorkspaceKey === "tla-makiyama-main") nextState.settings.cloudWorkspaceKey = "tla-suzuki-main";
+  if (nextState.project?.name === "TLA・牧山チーム PPM導入") nextState.project.name = "TLA・鈴木チーム PPM導入";
+  if (nextState.project?.summary === "Snapshotを使い、TLA・牧山チームのプロジェクト貢献度、意思決定、価値づけを透明に管理する。") {
+    nextState.project.summary = "Snapshotを使い、TLA・鈴木チームのプロジェクト貢献度、意思決定、価値づけを透明に管理する。";
+  }
+  if (nextState.community?.self?.name === "牧山") nextState.community.self.name = "鈴木太郎";
+  if (nextState.community?.self?.identity === "makiyama.eth") nextState.community.self.identity = "suzuki-taro.eth";
+  nextState.community.posts = (nextState.community.posts ?? []).map((post) => ({
+    ...post,
+    memberName: post.memberName === "牧山" ? "鈴木太郎" : post.memberName
+  }));
+  nextState.community.updates = (nextState.community.updates ?? []).map((update) => ({
+    ...update,
+    memberName: update.memberName === "牧山" ? "鈴木太郎" : update.memberName
+  }));
+  return nextState;
 }
 
 function persist() {
@@ -2479,7 +2508,7 @@ document.querySelector("#downloadJson").addEventListener("click", () => {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = "tla-makiyama-snapshot-payload.json";
+  link.download = "tla-suzuki-snapshot-payload.json";
   link.click();
   URL.revokeObjectURL(link.href);
 });
