@@ -46,6 +46,26 @@ const initialState = {
     summary: "Snapshotを使い、TLA・牧山チームのプロジェクト貢献度、意思決定、価値づけを透明に管理する。",
     model: "gpt-5.5",
     analysis: null
+  },
+  community: {
+    selfMemberId: "",
+    self: {
+      name: "牧山",
+      identity: "makiyama.eth",
+      headline: "プロジェクト設計 / PPM / DAO運営",
+      skills: "PPM, DAO, プロジェクト設計, 合意形成",
+      challenge: "能力ある人が相互交流し、プロジェクトへ挑戦できるコミュニティづくり",
+      linkedin: "",
+      facebook: "",
+      line: ""
+    },
+    contacts: [
+      { id: "n1", name: "会計管理", source: "LinkedIn", relation: "協力候補", skills: "会計, 精算, ガバナンス", status: "招待前", value: 18 },
+      { id: "n2", name: "外部連携", source: "Facebook", relation: "紹介", skills: "渉外, 地域連携, 広報", status: "交流中", value: 22 }
+    ],
+    updates: [
+      { id: "u1", memberName: "牧山", project: "G.D.DAOver.0", note: "能力コミュニティとプロジェクト実行をつなぐ設計を進行中。", date: "2026-06-30" }
+    ]
   }
 };
 
@@ -107,7 +127,14 @@ function mergeState(base, saved) {
     ...saved,
     members,
     settings: { ...base.settings, ...(saved.settings ?? {}) },
-    project: { ...base.project, ...(saved.project ?? {}) }
+    project: { ...base.project, ...(saved.project ?? {}) },
+    community: {
+      ...base.community,
+      ...(saved.community ?? {}),
+      self: { ...base.community.self, ...(saved.community?.self ?? {}) },
+      contacts: saved.community?.contacts ?? base.community.contacts,
+      updates: saved.community?.updates ?? base.community.updates
+    }
   };
 }
 
@@ -195,6 +222,115 @@ function renderMetrics() {
   document.querySelector("#memberCount").textContent = state.members.length;
   document.querySelector("#openProposalCount").textContent = openProposals.length;
   document.querySelector("#consensusRate").textContent = decided.length === 0 ? `${Math.round((passed.length / state.proposals.length) * 100)}%` : `${Math.round((passed.length / decided.length) * 100)}%`;
+}
+
+function skillList(value) {
+  return String(value ?? "")
+    .split(/[,、\n]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function uniqueSkills() {
+  const skills = new Set();
+  skillList(state.community.self.skills).forEach((skill) => skills.add(skill.toLowerCase()));
+  state.community.contacts.forEach((contact) => {
+    skillList(contact.skills).forEach((skill) => skills.add(skill.toLowerCase()));
+  });
+  state.members.forEach((member) => {
+    skillList(member.skills).forEach((skill) => skills.add(skill.toLowerCase()));
+  });
+  return skills;
+}
+
+function networkValue() {
+  const contactValue = state.community.contacts.reduce((sum, contact) => sum + Number(contact.value ?? 0), 0);
+  const memberValue = state.members.length * 10;
+  const skillValue = uniqueSkills().size * 3;
+  const updateValue = state.community.updates.length * 2;
+  const activeContacts = state.community.contacts.filter((contact) => contact.status === "交流中" || contact.status === "参加候補").length;
+  return {
+    total: memberValue + contactValue + skillValue + updateValue + activeContacts * 5,
+    memberValue,
+    contactValue,
+    skillCount: uniqueSkills().size,
+    activeContacts
+  };
+}
+
+function renderCommunity() {
+  const self = state.community.self;
+  document.querySelector("#communitySelfName").value = self.name ?? "";
+  document.querySelector("#communitySelfIdentity").value = self.identity ?? "";
+  document.querySelector("#communitySelfHeadline").value = self.headline ?? "";
+  document.querySelector("#communitySelfSkills").value = self.skills ?? "";
+  document.querySelector("#communitySelfChallenge").value = self.challenge ?? "";
+  document.querySelector("#communityLinkedin").value = self.linkedin ?? "";
+  document.querySelector("#communityFacebook").value = self.facebook ?? "";
+  document.querySelector("#communityLine").value = self.line ?? "";
+  renderNetworkValue();
+  renderNetworkContacts();
+  renderCommunityUpdates();
+}
+
+function renderNetworkValue() {
+  const value = networkValue();
+  document.querySelector("#networkValueSummary").innerHTML = `
+    <div class="network-value-box"><span>ネットワーク価値</span><strong>${value.total} pt</strong></div>
+    <div class="network-value-box"><span>登録メンバー</span><strong>${state.members.length}</strong></div>
+    <div class="network-value-box"><span>知り合い</span><strong>${state.community.contacts.length}</strong></div>
+    <div class="network-value-box"><span>スキル種類</span><strong>${value.skillCount}</strong></div>
+    <div class="network-value-box"><span>交流中</span><strong>${value.activeContacts}</strong></div>
+  `;
+}
+
+function renderNetworkContacts() {
+  document.querySelector("#networkContactTable").innerHTML = state.community.contacts.map((contact) => `
+    <tr data-contact-id="${escapeHtml(contact.id)}">
+      <td><input data-contact-field="name" type="text" maxlength="40" value="${escapeHtml(contact.name ?? "")}"></td>
+      <td>
+        <select data-contact-field="source">
+          ${["LinkedIn", "Facebook", "LINE", "紹介", "直接"].map((source) => `<option value="${source}" ${source === contact.source ? "selected" : ""}>${source}</option>`).join("")}
+        </select>
+      </td>
+      <td><input data-contact-field="relation" type="text" maxlength="40" value="${escapeHtml(contact.relation ?? "")}" placeholder="協力候補 / 紹介"></td>
+      <td><input data-contact-field="skills" type="text" maxlength="160" value="${escapeHtml(contact.skills ?? "")}" placeholder="スキルをカンマ区切り"></td>
+      <td>
+        <select data-contact-field="status">
+          ${["招待前", "交流中", "参加候補", "参加済み"].map((status) => `<option value="${status}" ${status === contact.status ? "selected" : ""}>${status}</option>`).join("")}
+        </select>
+      </td>
+      <td><input data-contact-field="value" type="number" min="0" max="100" value="${Number(contact.value ?? 10)}"></td>
+      <td><button class="icon-button danger-button" data-contact-action="delete" type="button" title="削除" aria-label="削除">×</button></td>
+    </tr>
+  `).join("");
+}
+
+function renderCommunityUpdates() {
+  document.querySelector("#communityUpdates").innerHTML = state.community.updates.slice(-4).reverse().map((update) => `
+    <article class="community-update">
+      <div class="rank-top">
+        <strong>${escapeHtml(update.memberName ?? "未設定")}</strong>
+        <span class="pill">${escapeHtml(update.date ?? "")}</span>
+      </div>
+      <div class="subtle">${escapeHtml(update.project ?? "")}</div>
+      <p>${escapeHtml(update.note ?? "")}</p>
+    </article>
+  `).join("");
+}
+
+function syncCommunityFromForm() {
+  state.community.self = {
+    ...state.community.self,
+    name: document.querySelector("#communitySelfName").value.trim(),
+    identity: document.querySelector("#communitySelfIdentity").value.trim(),
+    headline: document.querySelector("#communitySelfHeadline").value.trim(),
+    skills: document.querySelector("#communitySelfSkills").value.trim(),
+    challenge: document.querySelector("#communitySelfChallenge").value.trim(),
+    linkedin: document.querySelector("#communityLinkedin").value.trim(),
+    facebook: document.querySelector("#communityFacebook").value.trim(),
+    line: document.querySelector("#communityLine").value.trim()
+  };
 }
 
 function renderProjectPlanner() {
@@ -1433,12 +1569,21 @@ function renderSnapshotPayload() {
       summary: state.project.summary,
       ppmAnalysis: state.project.analysis
     },
+    community: {
+      self: state.community.self,
+      networkValue: networkValue(),
+      contacts: state.community.contacts,
+      updates: state.community.updates.slice(-10)
+    },
     members: state.members.map((member) => ({
       name: member.name,
       address: member.wallet,
       role: member.role || "",
       joinStatus: member.joinStatus || "初期",
       joinedAt: member.joinedAt || "",
+      skills: member.skills || "",
+      challenge: member.challenge || "",
+      socialLinks: member.socialLinks || {},
       votingPower: powers[member.id] ?? 0
     })),
     proposals: state.proposals.map((proposal) => ({
@@ -1522,6 +1667,7 @@ function render() {
   renderRanking();
   renderProposalSummary();
   renderOverviewMembers();
+  renderCommunity();
   renderMembers();
   renderContributionLog();
   renderDecisionList();
@@ -1691,6 +1837,93 @@ function deleteOverviewMember(row) {
   showToast(`${member?.name ?? "メンバー"}を削除しました`);
 }
 
+function syncSelfProfileToMember() {
+  syncCommunityFromForm();
+  const self = state.community.self;
+  let member = state.members.find((item) => item.id === state.community.selfMemberId);
+  if (!member) {
+    member = state.members.find((item) => normalizeIdentity(item.wallet) === normalizeIdentity(self.identity));
+  }
+  if (!member) {
+    member = state.members.find((item) => item.name.trim().toLowerCase() === self.name.trim().toLowerCase());
+  }
+  const validationError = validateMemberValues(self.name, self.identity, member?.id ?? "");
+  if (validationError) return showToast(validationError);
+  if (!member) {
+    member = {
+      id: `m${Date.now()}`,
+      name: self.name,
+      wallet: self.identity,
+      role: self.headline,
+      joinStatus: "初期",
+      joinedAt: today()
+    };
+    state.members.push(member);
+  }
+  member.name = self.name;
+  member.wallet = self.identity;
+  member.role = self.headline;
+  member.skills = self.skills;
+  member.challenge = self.challenge;
+  member.socialLinks = {
+    linkedin: self.linkedin,
+    facebook: self.facebook,
+    line: self.line
+  };
+  state.community.selfMemberId = member.id;
+  persist();
+  render();
+  showToast("自分のプロフィールをメンバーに反映しました");
+}
+
+function addNetworkContact() {
+  state.community.contacts.push({
+    id: `n${Date.now()}`,
+    name: "新しい知り合い",
+    source: "LinkedIn",
+    relation: "協力候補",
+    skills: "",
+    status: "招待前",
+    value: 10
+  });
+  persist();
+  renderCommunity();
+  showToast("知り合いを追加しました");
+}
+
+function updateNetworkContact(row, field, value) {
+  const contact = state.community.contacts.find((item) => item.id === row.dataset.contactId);
+  if (!contact) return;
+  contact[field] = field === "value" ? Number(value) : value.trim();
+  persist();
+  renderNetworkValue();
+  renderCommunityUpdates();
+}
+
+function deleteNetworkContact(row) {
+  const contact = state.community.contacts.find((item) => item.id === row.dataset.contactId);
+  state.community.contacts = state.community.contacts.filter((item) => item.id !== row.dataset.contactId);
+  persist();
+  renderCommunity();
+  showToast(`${contact?.name ?? "知り合い"}を削除しました`);
+}
+
+function addCommunityUpdate() {
+  syncCommunityFromForm();
+  const self = state.community.self;
+  if (!self.name || !self.challenge) return showToast("名前と近況を入力してください");
+  state.community.updates.push({
+    id: `u${Date.now()}`,
+    memberName: self.name,
+    project: state.project.name || "未設定プロジェクト",
+    note: self.challenge,
+    date: today()
+  });
+  persist();
+  renderCommunity();
+  showToast("近況を共有しました");
+}
+
 function showToast(message) {
   const toast = document.querySelector("#toast");
   toast.textContent = message;
@@ -1791,6 +2024,32 @@ document.querySelector("#overviewMemberTable").addEventListener("click", (event)
   const row = event.target.closest("tr[data-member-id]");
   if (action !== "delete" || !row) return;
   deleteOverviewMember(row);
+});
+
+document.querySelector("#syncSelfProfile").addEventListener("click", syncSelfProfileToMember);
+document.querySelector("#addNetworkContact").addEventListener("click", addNetworkContact);
+document.querySelector("#addCommunityUpdate").addEventListener("click", addCommunityUpdate);
+
+document.querySelectorAll("#communitySelfName, #communitySelfIdentity, #communitySelfHeadline, #communitySelfSkills, #communitySelfChallenge, #communityLinkedin, #communityFacebook, #communityLine").forEach((input) => {
+  input.addEventListener("input", () => {
+    syncCommunityFromForm();
+    persist();
+    renderNetworkValue();
+  });
+});
+
+document.querySelector("#networkContactTable").addEventListener("change", (event) => {
+  const field = event.target.dataset.contactField;
+  const row = event.target.closest("tr[data-contact-id]");
+  if (!field || !row) return;
+  updateNetworkContact(row, field, event.target.value);
+});
+
+document.querySelector("#networkContactTable").addEventListener("click", (event) => {
+  const action = event.target.dataset.contactAction;
+  const row = event.target.closest("tr[data-contact-id]");
+  if (action !== "delete" || !row) return;
+  deleteNetworkContact(row);
 });
 
 document.querySelector("#generatePpmPlan").addEventListener("click", generatePpmPlanWithOpenAi);

@@ -272,6 +272,83 @@ label {
   grid-column: 1 / -1;
 }
 
+.community-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 14px;
+}
+
+.community-grid .wide {
+  grid-column: 1 / -1;
+}
+
+.network-value-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.network-value-box,
+.community-update {
+  padding: 10px;
+  border: 1px solid #e6eaf0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.network-value-box span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.network-value-box strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 22px;
+}
+
+.network-contact-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.network-contact-table th,
+.network-contact-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #e6eaf0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.network-contact-table th {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.network-contact-table input,
+.network-contact-table select {
+  min-height: 36px;
+  margin: 0;
+  font-size: 13px;
+}
+
+.community-updates {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.community-update p {
+  margin: 8px 0 0;
+  color: var(--ink);
+  font-size: 13px;
+}
+
 .planner-actions {
   display: flex;
   align-items: end;
@@ -1088,12 +1165,14 @@ pre {
   .two-column,
   .snapshot-layout,
   .planner-grid,
+  .community-grid,
   .ppm-summary,
   .ppm-task-grid {
     grid-template-columns: 1fr;
   }
 
-  .planner-grid .wide {
+  .planner-grid .wide,
+  .community-grid .wide {
     grid-column: auto;
   }
 

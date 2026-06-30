@@ -6,7 +6,7 @@
     <title>G.D.DAOver.0</title>
     <script>
       window.__assetBase = window.location.protocol === "file:" ? "./" : "/outputs/tla-makiyama-snapshot-app/";
-      window.__assetVersion = "20260630-task-assignee";
+      window.__assetVersion = "20260630-community-network";
       document.write(`<link rel="stylesheet" href="${window.__assetBase}styles.css?v=${window.__assetVersion}">`);
     </script>
   </head>
@@ -105,6 +105,73 @@
                 <tbody id="overviewMemberTable"></tbody>
               </table>
             </div>
+          </section>
+
+          <section class="panel community-panel">
+            <div class="panel-header">
+              <div>
+                <h3>能力コミュニティ</h3>
+                <p class="subtle">自分のスキル、SNSリンク、知り合いネットワーク、近況を登録し、ネットワーク価値を見える化します。</p>
+              </div>
+              <span class="pill coral">Network value</span>
+            </div>
+            <div class="community-grid">
+              <label>
+                自分の名前
+                <input id="communitySelfName" type="text" maxlength="40" placeholder="名前">
+              </label>
+              <label>
+                Wallet / ENS / 仮ID
+                <input id="communitySelfIdentity" type="text" maxlength="80" placeholder="例：makiyama.eth">
+              </label>
+              <label>
+                専門・肩書
+                <input id="communitySelfHeadline" type="text" maxlength="80" placeholder="例：PPM / DAO / 教育">
+              </label>
+              <label>
+                スキル
+                <input id="communitySelfSkills" type="text" maxlength="160" placeholder="カンマ区切りで入力">
+              </label>
+              <label class="wide">
+                挑戦中プロジェクト・近況
+                <textarea id="communitySelfChallenge" rows="3" maxlength="240" placeholder="いま挑戦していること、相談したいこと、共有したい近況"></textarea>
+              </label>
+              <label>
+                LinkedIn
+                <input id="communityLinkedin" type="url" maxlength="160" placeholder="LinkedInプロフィールURL">
+              </label>
+              <label>
+                Facebook
+                <input id="communityFacebook" type="url" maxlength="160" placeholder="FacebookプロフィールURL">
+              </label>
+              <label>
+                LINE
+                <input id="communityLine" type="text" maxlength="120" placeholder="LINE ID / URL">
+              </label>
+            </div>
+            <div class="panel-actions">
+              <button class="primary-button" id="syncSelfProfile" type="button">自分をメンバー登録</button>
+              <button class="secondary-button" id="addNetworkContact" type="button">知り合い追加</button>
+              <button class="secondary-button" id="addCommunityUpdate" type="button">近況を共有</button>
+            </div>
+            <div class="network-value-summary" id="networkValueSummary"></div>
+            <div class="table-scroll">
+              <table class="network-contact-table">
+                <thead>
+                  <tr>
+                    <th>名前</th>
+                    <th>接点</th>
+                    <th>関係</th>
+                    <th>スキル</th>
+                    <th>状態</th>
+                    <th>価値pt</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="networkContactTable"></tbody>
+              </table>
+            </div>
+            <div class="community-updates" id="communityUpdates"></div>
           </section>
 
           <section class="panel ppm-planner">
