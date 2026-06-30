@@ -6,7 +6,7 @@
     <title>G.D.DAOver.0</title>
     <script>
       window.__assetBase = window.location.protocol === "file:" ? "./" : "/outputs/tla-makiyama-snapshot-app/";
-      window.__assetVersion = "20260630-anonymous-sns";
+      window.__assetVersion = "20260630-feed-attachments";
       document.write(`<link rel="stylesheet" href="${window.__assetBase}styles.css?v=${window.__assetVersion}">`);
     </script>
   </head>
@@ -208,6 +208,11 @@
               近況投稿
               <textarea id="feedPostText" rows="4" maxlength="280" placeholder="いま挑戦していること、相談したいこと、協力してほしいこと"></textarea>
             </label>
+            <label>
+              写真・PDFなど
+              <input id="feedPostFiles" type="file" multiple accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt">
+            </label>
+            <p class="subtle">画像、PDF、Officeファイルなどを最大3件まで添付できます。添付の合計は2MBまでです。</p>
             <div class="panel-actions">
               <button class="secondary-button" id="shareFeedPost" type="button">投稿する</button>
               <button class="secondary-button" data-go-view="sns-permission" type="button">知り合いを増やす</button>

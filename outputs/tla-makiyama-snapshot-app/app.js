@@ -437,24 +437,85 @@ function renderSocialFeed() {
         <strong>${escapeHtml(post.memberName ?? "未設定")}</strong>
         <span class="pill">${escapeHtml(post.date ?? "")}</span>
       </div>
-      <p>${escapeHtml(post.text ?? "")}</p>
+      ${post.text ? `<p>${escapeHtml(post.text ?? "")}</p>` : ""}
+      ${renderPostAttachments(post.attachments)}
       <div class="subtle">挑戦中: ${escapeHtml(post.project ?? state.project.name ?? "")}</div>
     </article>
   `).join("");
 }
 
-function shareFeedPost() {
+function renderPostAttachments(attachments = []) {
+  if (!attachments.length) return "";
+  return `
+    <div class="feed-attachments">
+      ${attachments.map((file) => {
+        const isImage = (file.type ?? "").startsWith("image/");
+        if (isImage) {
+          return `
+            <a class="feed-attachment image" href="${file.dataUrl}" target="_blank" rel="noreferrer">
+              <img src="${file.dataUrl}" alt="${escapeHtml(file.name ?? "添付画像")}">
+              <span>${escapeHtml(file.name ?? "添付画像")}</span>
+            </a>
+          `;
+        }
+        return `
+          <a class="feed-attachment document" href="${file.dataUrl}" download="${escapeHtml(file.name ?? "attachment")}" target="_blank" rel="noreferrer">
+            <strong>${escapeHtml(file.type === "application/pdf" ? "PDF" : "FILE")}</strong>
+            <span>${escapeHtml(file.name ?? "添付ファイル")}</span>
+          </a>
+        `;
+      }).join("")}
+    </div>
+  `;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function readFeedAttachments() {
+  const input = document.querySelector("#feedPostFiles");
+  const files = Array.from(input.files ?? []);
+  const maxFiles = 3;
+  const maxBytes = 2 * 1024 * 1024;
+  if (files.length > maxFiles) {
+    showToast(`添付は最大${maxFiles}件までです`);
+    return null;
+  }
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  if (totalBytes > maxBytes) {
+    showToast("添付ファイルの合計は2MB以下にしてください");
+    return null;
+  }
+  return Promise.all(files.map(async (file) => ({
+    name: file.name,
+    type: file.type || "application/octet-stream",
+    size: file.size,
+    dataUrl: await readFileAsDataUrl(file)
+  })));
+}
+
+async function shareFeedPost() {
   const text = document.querySelector("#feedPostText").value.trim();
-  if (!text) return showToast("投稿内容を入力してください");
+  const attachments = await readFeedAttachments();
+  if (!attachments) return;
+  if (!text && !attachments.length) return showToast("投稿内容または添付ファイルを入力してください");
   const self = state.community.self;
   state.community.posts.push({
     id: `post-${Date.now()}`,
     memberName: self.name || "未設定",
     text,
     project: state.project.name || "未設定プロジェクト",
-    date: today()
+    date: today(),
+    attachments
   });
   document.querySelector("#feedPostText").value = "";
+  document.querySelector("#feedPostFiles").value = "";
   persist();
   renderSocialFeed();
   showToast("近況を投稿しました");
