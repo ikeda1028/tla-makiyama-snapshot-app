@@ -6,7 +6,7 @@
     <title>G.D.DAOver.0</title>
     <script>
       window.__assetBase = window.location.protocol === "file:" ? "./" : "/outputs/tla-makiyama-snapshot-app/";
-      window.__assetVersion = "20260630-community-network";
+      window.__assetVersion = "20260630-onboarding-feed";
       document.write(`<link rel="stylesheet" href="${window.__assetBase}styles.css?v=${window.__assetVersion}">`);
     </script>
   </head>
@@ -22,9 +22,25 @@
         </div>
 
         <nav class="tabs" aria-label="メイン">
-          <button class="tab active" data-view="overview" type="button">
+          <button class="tab active" data-view="register" type="button">
+            <span class="icon">◎</span>
+            会員登録
+          </button>
+          <button class="tab" data-view="sns-permission" type="button">
+            <span class="icon">◇</span>
+            SNS許可
+          </button>
+          <button class="tab" data-view="status-eval" type="button">
+            <span class="icon">▣</span>
+            ステイタス
+          </button>
+          <button class="tab" data-view="feed" type="button">
+            <span class="icon">✎</span>
+            投稿
+          </button>
+          <button class="tab" data-view="overview" type="button">
             <span class="icon">◆</span>
-            概況
+            プロジェクト概況
           </button>
           <button class="tab" data-view="contribution" type="button">
             <span class="icon">●</span>
@@ -49,8 +65,8 @@
       <main class="workspace">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Project room</p>
-            <h2 id="viewTitle">概況</h2>
+            <p class="eyebrow">Community room</p>
+            <h2 id="viewTitle">会員登録</h2>
           </div>
           <div class="toolbar">
             <button class="icon-button" id="resetDemo" type="button" title="初期データに戻す" aria-label="初期データに戻す">↺</button>
@@ -58,7 +74,142 @@
           </div>
         </header>
 
-        <section class="view active" id="overview">
+        <section class="view active" id="register">
+          <section class="panel onboarding-panel">
+            <div class="panel-header">
+              <div>
+                <h3>会員登録</h3>
+                <p class="subtle">まず自分を登録し、スキルとSNSリンクをプロフィール化します。</p>
+              </div>
+              <span class="pill">Step 1</span>
+            </div>
+            <div class="onboarding-steps" id="onboardingSteps"></div>
+            <div class="community-grid">
+              <label>
+                名前
+                <input id="registerName" type="text" maxlength="40" placeholder="名前">
+              </label>
+              <label>
+                Wallet / ENS / 仮ID
+                <input id="registerIdentity" type="text" maxlength="80" placeholder="例：makiyama.eth">
+              </label>
+              <label>
+                専門・肩書
+                <input id="registerHeadline" type="text" maxlength="80" placeholder="例：PPM / DAO / 教育">
+              </label>
+              <label class="wide">
+                スキル
+                <input id="registerSkills" type="text" maxlength="180" placeholder="PPM, DAO, 教育, 事業開発">
+              </label>
+              <label>
+                LinkedIn
+                <input id="registerLinkedin" type="url" maxlength="160" placeholder="LinkedInプロフィールURL">
+              </label>
+              <label>
+                Facebook
+                <input id="registerFacebook" type="url" maxlength="160" placeholder="FacebookプロフィールURL">
+              </label>
+              <label>
+                LINE
+                <input id="registerLine" type="text" maxlength="120" placeholder="LINE ID / URL">
+              </label>
+            </div>
+            <div class="panel-actions">
+              <button class="primary-button" id="completeRegistration" type="button">登録してSNS許可へ</button>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="sns-permission">
+          <section class="panel onboarding-panel">
+            <div class="panel-header">
+              <div>
+                <h3>SNSの友達許可</h3>
+                <p class="subtle">LinkedIn、Facebook、LINEの知り合いを登録し、能力ネットワークとして扱います。</p>
+              </div>
+              <span class="pill">Step 2</span>
+            </div>
+            <div class="onboarding-steps" id="snsOnboardingSteps"></div>
+            <div class="permission-grid">
+              <label class="permission-card">
+                <input id="allowLinkedinFriends" type="checkbox">
+                <strong>LinkedInの知り合い</strong>
+                <span>職歴、専門性、ビジネス関係を登録対象にします。</span>
+              </label>
+              <label class="permission-card">
+                <input id="allowFacebookFriends" type="checkbox">
+                <strong>Facebookの知り合い</strong>
+                <span>地域、友人、活動コミュニティの接点を登録対象にします。</span>
+              </label>
+              <label class="permission-card">
+                <input id="allowLineFriends" type="checkbox">
+                <strong>LINEの知り合い</strong>
+                <span>日常的に連絡できる協力候補を登録対象にします。</span>
+              </label>
+            </div>
+            <div class="panel-actions">
+              <button class="secondary-button" id="importSampleFriends" type="button">許可したSNSから候補追加</button>
+              <button class="primary-button" id="goStatusEvaluation" type="button">ステイタス評価へ</button>
+            </div>
+            <div class="api-state" id="snsPermissionState">API連携前は、許可状態と候補リストをアプリ内で管理します。</div>
+            <div class="table-scroll">
+              <table class="network-contact-table">
+                <thead>
+                  <tr>
+                    <th>名前</th>
+                    <th>接点</th>
+                    <th>関係</th>
+                    <th>スキル</th>
+                    <th>状態</th>
+                    <th>価値pt</th>
+                  </tr>
+                </thead>
+                <tbody id="permissionContactPreview"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="status-eval">
+          <section class="panel onboarding-panel">
+            <div class="panel-header">
+              <div>
+                <h3>個人ステイタス評価</h3>
+                <p class="subtle">スキル、SNS接続、知り合い、近況から、コミュニティ内の現在値を見える化します。</p>
+              </div>
+              <span class="pill">Step 3</span>
+            </div>
+            <div class="onboarding-steps" id="statusOnboardingSteps"></div>
+            <div class="status-score-grid" id="personalStatusScore"></div>
+            <div class="panel-actions">
+              <button class="secondary-button" id="refreshStatusScore" type="button">再評価</button>
+              <button class="primary-button" id="goFeed" type="button">投稿画面へ</button>
+            </div>
+          </section>
+        </section>
+
+        <section class="view" id="feed">
+          <section class="panel feed-panel">
+            <div class="panel-header">
+              <div>
+                <h3>SNS投稿フィード</h3>
+                <p class="subtle">近況、挑戦中のプロジェクト、協力募集を共有し、プロジェクト概況へ進めます。</p>
+              </div>
+              <button class="primary-button" data-go-view="overview" type="button">プロジェクト概況へ</button>
+            </div>
+            <label>
+              近況投稿
+              <textarea id="feedPostText" rows="4" maxlength="280" placeholder="いま挑戦していること、相談したいこと、協力してほしいこと"></textarea>
+            </label>
+            <div class="panel-actions">
+              <button class="secondary-button" id="shareFeedPost" type="button">投稿する</button>
+              <button class="secondary-button" data-go-view="sns-permission" type="button">知り合いを増やす</button>
+            </div>
+            <div class="feed-list" id="socialFeedList"></div>
+          </section>
+        </section>
+
+        <section class="view" id="overview">
           <section class="panel cloud-panel">
             <div class="panel-header">
               <div>

@@ -282,6 +282,133 @@ label {
   grid-column: 1 / -1;
 }
 
+.onboarding-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.onboarding-step {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.onboarding-step span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #e8edf3;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.onboarding-step strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+
+.onboarding-step.active {
+  border-color: #9bd4ce;
+  background: #eefaf8;
+}
+
+.onboarding-step.active span,
+.onboarding-step.done span {
+  background: var(--teal);
+  color: #ffffff;
+}
+
+.permission-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.permission-card {
+  min-height: 128px;
+  padding: 12px;
+  border: 1px solid #e6eaf0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.permission-card input {
+  width: auto;
+  min-height: auto;
+}
+
+.permission-card strong,
+.permission-card span {
+  display: block;
+}
+
+.permission-card span {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.status-score-grid {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.2fr) repeat(4, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.status-score-main {
+  min-height: 120px;
+  padding: 14px;
+  border: 1px solid #9bd4ce;
+  border-radius: 8px;
+  background: #eefaf8;
+}
+
+.status-score-main span,
+.status-score-main small {
+  color: var(--teal);
+  font-weight: 800;
+}
+
+.status-score-main strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--teal);
+  font-size: 44px;
+  line-height: 1;
+}
+
+.feed-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.feed-post {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #e6eaf0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.feed-post p {
+  margin: 0;
+  line-height: 1.6;
+}
+
 .network-value-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -1166,6 +1293,8 @@ pre {
   .snapshot-layout,
   .planner-grid,
   .community-grid,
+  .permission-grid,
+  .status-score-grid,
   .ppm-summary,
   .ppm-task-grid {
     grid-template-columns: 1fr;
@@ -1182,6 +1311,7 @@ pre {
   .asana-grid,
   .task-point-summary,
   .workflow-steps,
+  .onboarding-steps,
   .api-config-grid,
   .cloud-grid {
     grid-template-columns: 1fr;

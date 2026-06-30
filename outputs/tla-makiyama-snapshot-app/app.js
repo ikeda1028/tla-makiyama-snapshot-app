@@ -59,9 +59,17 @@ const initialState = {
       facebook: "",
       line: ""
     },
+    permissions: {
+      linkedin: false,
+      facebook: false,
+      line: false
+    },
     contacts: [
       { id: "n1", name: "会計管理", source: "LinkedIn", relation: "協力候補", skills: "会計, 精算, ガバナンス", status: "招待前", value: 18 },
       { id: "n2", name: "外部連携", source: "Facebook", relation: "紹介", skills: "渉外, 地域連携, 広報", status: "交流中", value: 22 }
+    ],
+    posts: [
+      { id: "post-1", memberName: "牧山", text: "能力コミュニティとプロジェクト実行をつなぐ場を準備中です。", project: "G.D.DAOver.0", date: "2026-06-30" }
     ],
     updates: [
       { id: "u1", memberName: "牧山", project: "G.D.DAOver.0", note: "能力コミュニティとプロジェクト実行をつなぐ設計を進行中。", date: "2026-06-30" }
@@ -83,7 +91,11 @@ const memberDirectory = [
 ];
 
 const views = {
-  overview: "概況",
+  register: "会員登録",
+  "sns-permission": "SNSの友達許可",
+  "status-eval": "個人ステイタス評価",
+  feed: "投稿フィード",
+  overview: "プロジェクト概況",
   contribution: "貢献度",
   decision: "意思決定",
   snapshot: "Snapshot"
@@ -132,7 +144,9 @@ function mergeState(base, saved) {
       ...base.community,
       ...(saved.community ?? {}),
       self: { ...base.community.self, ...(saved.community?.self ?? {}) },
+      permissions: { ...base.community.permissions, ...(saved.community?.permissions ?? {}) },
       contacts: saved.community?.contacts ?? base.community.contacts,
+      posts: saved.community?.posts ?? base.community.posts,
       updates: saved.community?.updates ?? base.community.updates
     }
   };
@@ -271,6 +285,182 @@ function renderCommunity() {
   renderNetworkValue();
   renderNetworkContacts();
   renderCommunityUpdates();
+}
+
+function renderOnboarding() {
+  renderOnboardingSteps("#onboardingSteps", 0);
+  renderOnboardingSteps("#snsOnboardingSteps", 1);
+  renderOnboardingSteps("#statusOnboardingSteps", 2);
+  renderRegistrationForm();
+  renderSnsPermissions();
+  renderPermissionContactPreview();
+  renderPersonalStatusScore();
+  renderSocialFeed();
+}
+
+function renderOnboardingSteps(selector, current) {
+  const container = document.querySelector(selector);
+  if (!container) return;
+  const steps = ["会員登録", "SNS許可", "ステイタス評価", "投稿"];
+  container.innerHTML = steps.map((step, index) => `
+    <div class="onboarding-step ${index < current ? "done" : index === current ? "active" : ""}">
+      <span>${index + 1}</span>
+      <strong>${step}</strong>
+    </div>
+  `).join("");
+}
+
+function renderRegistrationForm() {
+  const self = state.community.self;
+  document.querySelector("#registerName").value = self.name ?? "";
+  document.querySelector("#registerIdentity").value = self.identity ?? "";
+  document.querySelector("#registerHeadline").value = self.headline ?? "";
+  document.querySelector("#registerSkills").value = self.skills ?? "";
+  document.querySelector("#registerLinkedin").value = self.linkedin ?? "";
+  document.querySelector("#registerFacebook").value = self.facebook ?? "";
+  document.querySelector("#registerLine").value = self.line ?? "";
+}
+
+function syncRegistrationFromForm() {
+  state.community.self = {
+    ...state.community.self,
+    name: document.querySelector("#registerName").value.trim(),
+    identity: document.querySelector("#registerIdentity").value.trim(),
+    headline: document.querySelector("#registerHeadline").value.trim(),
+    skills: document.querySelector("#registerSkills").value.trim(),
+    linkedin: document.querySelector("#registerLinkedin").value.trim(),
+    facebook: document.querySelector("#registerFacebook").value.trim(),
+    line: document.querySelector("#registerLine").value.trim()
+  };
+}
+
+function renderSnsPermissions() {
+  document.querySelector("#allowLinkedinFriends").checked = !!state.community.permissions.linkedin;
+  document.querySelector("#allowFacebookFriends").checked = !!state.community.permissions.facebook;
+  document.querySelector("#allowLineFriends").checked = !!state.community.permissions.line;
+}
+
+function syncSnsPermissionsFromForm() {
+  state.community.permissions = {
+    linkedin: document.querySelector("#allowLinkedinFriends").checked,
+    facebook: document.querySelector("#allowFacebookFriends").checked,
+    line: document.querySelector("#allowLineFriends").checked
+  };
+}
+
+function renderPermissionContactPreview() {
+  const preview = document.querySelector("#permissionContactPreview");
+  if (!preview) return;
+  preview.innerHTML = state.community.contacts.slice(-6).map((contact) => `
+    <tr>
+      <td>${escapeHtml(contact.name ?? "")}</td>
+      <td>${escapeHtml(contact.source ?? "")}</td>
+      <td>${escapeHtml(contact.relation ?? "")}</td>
+      <td>${escapeHtml(contact.skills ?? "")}</td>
+      <td>${escapeHtml(contact.status ?? "")}</td>
+      <td>${Number(contact.value ?? 0)}</td>
+    </tr>
+  `).join("");
+}
+
+function addAllowedSnsContacts() {
+  syncSnsPermissionsFromForm();
+  const presets = [
+    state.community.permissions.linkedin ? { name: "LinkedIn専門家", source: "LinkedIn", relation: "専門家候補", skills: "事業開発, 組織設計", status: "参加候補", value: 24 } : null,
+    state.community.permissions.facebook ? { name: "Facebookコミュニティ仲間", source: "Facebook", relation: "活動仲間", skills: "地域連携, 発信", status: "交流中", value: 18 } : null,
+    state.community.permissions.line ? { name: "LINE連絡メンバー", source: "LINE", relation: "直接連絡", skills: "実行支援, 調整", status: "交流中", value: 16 } : null
+  ].filter(Boolean);
+  let added = 0;
+  presets.forEach((preset) => {
+    const exists = state.community.contacts.some((contact) => contact.source === preset.source && contact.name === preset.name);
+    if (exists) return;
+    state.community.contacts.push({ id: `n${Date.now()}-${added}`, ...preset });
+    added += 1;
+  });
+  persist();
+  renderCommunity();
+  renderPermissionContactPreview();
+  document.querySelector("#snsPermissionState").textContent = `${added}件の候補を追加しました。API連携後は実データに置き換えます。`;
+  document.querySelector("#snsPermissionState").className = "api-state ready";
+}
+
+function personalStatusScore() {
+  const self = state.community.self;
+  const skills = skillList(self.skills).length;
+  const permissions = Object.values(state.community.permissions).filter(Boolean).length;
+  const value = networkValue();
+  const profile = [self.name, self.identity, self.headline].filter(Boolean).length;
+  return {
+    total: Math.min(100, profile * 10 + skills * 8 + permissions * 8 + value.activeContacts * 6 + Math.min(value.contactValue, 30)),
+    profile,
+    skills,
+    permissions,
+    network: value.total,
+    activeContacts: value.activeContacts
+  };
+}
+
+function renderPersonalStatusScore() {
+  const container = document.querySelector("#personalStatusScore");
+  if (!container) return;
+  const score = personalStatusScore();
+  container.innerHTML = `
+    <div class="status-score-main">
+      <span>個人ステイタス</span>
+      <strong>${score.total}</strong>
+      <small>/ 100</small>
+    </div>
+    <div class="network-value-box"><span>プロフィール項目</span><strong>${score.profile} / 3</strong></div>
+    <div class="network-value-box"><span>スキル数</span><strong>${score.skills}</strong></div>
+    <div class="network-value-box"><span>SNS許可</span><strong>${score.permissions} / 3</strong></div>
+    <div class="network-value-box"><span>交流中</span><strong>${score.activeContacts}</strong></div>
+  `;
+}
+
+function renderSocialFeed() {
+  const container = document.querySelector("#socialFeedList");
+  if (!container) return;
+  const posts = [...(state.community.posts ?? []), ...(state.community.updates ?? []).map((update) => ({
+    id: `update-${update.id}`,
+    memberName: update.memberName,
+    text: update.note,
+    project: update.project,
+    date: update.date
+  }))].slice(-8).reverse();
+  container.innerHTML = posts.map((post) => `
+    <article class="feed-post">
+      <div class="rank-top">
+        <strong>${escapeHtml(post.memberName ?? "未設定")}</strong>
+        <span class="pill">${escapeHtml(post.date ?? "")}</span>
+      </div>
+      <p>${escapeHtml(post.text ?? "")}</p>
+      <div class="subtle">挑戦中: ${escapeHtml(post.project ?? state.project.name ?? "")}</div>
+    </article>
+  `).join("");
+}
+
+function shareFeedPost() {
+  const text = document.querySelector("#feedPostText").value.trim();
+  if (!text) return showToast("投稿内容を入力してください");
+  const self = state.community.self;
+  state.community.posts.push({
+    id: `post-${Date.now()}`,
+    memberName: self.name || "未設定",
+    text,
+    project: state.project.name || "未設定プロジェクト",
+    date: today()
+  });
+  document.querySelector("#feedPostText").value = "";
+  persist();
+  renderSocialFeed();
+  showToast("近況を投稿しました");
+}
+
+function setActiveView(view) {
+  document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.view === view));
+  document.querySelectorAll(".view").forEach((section) => section.classList.toggle("active", section.id === view));
+  document.querySelector("#viewTitle").textContent = views[view] ?? view;
+  document.querySelector(".eyebrow").textContent = ["overview", "contribution", "decision", "snapshot"].includes(view) ? "Project room" : "Community room";
 }
 
 function renderNetworkValue() {
@@ -1660,6 +1850,7 @@ async function loadStateFromCloud() {
 function render() {
   renderSelects();
   renderMetrics();
+  renderOnboarding();
   renderWorkflow();
   renderProjectPlanner();
   renderTaskEditor();
@@ -1947,10 +2138,7 @@ function today() {
 
 document.querySelectorAll(".tab").forEach((button) => {
   button.addEventListener("click", () => {
-    const view = button.dataset.view;
-    document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab === button));
-    document.querySelectorAll(".view").forEach((section) => section.classList.toggle("active", section.id === view));
-    document.querySelector("#viewTitle").textContent = views[view];
+    setActiveView(button.dataset.view);
   });
 });
 
@@ -2029,6 +2217,47 @@ document.querySelector("#overviewMemberTable").addEventListener("click", (event)
 document.querySelector("#syncSelfProfile").addEventListener("click", syncSelfProfileToMember);
 document.querySelector("#addNetworkContact").addEventListener("click", addNetworkContact);
 document.querySelector("#addCommunityUpdate").addEventListener("click", addCommunityUpdate);
+document.querySelector("#completeRegistration").addEventListener("click", () => {
+  syncRegistrationFromForm();
+  document.querySelector("#communitySelfName").value = state.community.self.name;
+  document.querySelector("#communitySelfIdentity").value = state.community.self.identity;
+  document.querySelector("#communitySelfHeadline").value = state.community.self.headline;
+  document.querySelector("#communitySelfSkills").value = state.community.self.skills;
+  document.querySelector("#communityLinkedin").value = state.community.self.linkedin;
+  document.querySelector("#communityFacebook").value = state.community.self.facebook;
+  document.querySelector("#communityLine").value = state.community.self.line;
+  syncSelfProfileToMember();
+  setActiveView("sns-permission");
+});
+document.querySelector("#importSampleFriends").addEventListener("click", addAllowedSnsContacts);
+document.querySelector("#goStatusEvaluation").addEventListener("click", () => {
+  syncSnsPermissionsFromForm();
+  persist();
+  renderPersonalStatusScore();
+  setActiveView("status-eval");
+});
+document.querySelector("#refreshStatusScore").addEventListener("click", renderPersonalStatusScore);
+document.querySelector("#goFeed").addEventListener("click", () => setActiveView("feed"));
+document.querySelector("#shareFeedPost").addEventListener("click", shareFeedPost);
+document.querySelectorAll("[data-go-view]").forEach((button) => {
+  button.addEventListener("click", () => setActiveView(button.dataset.goView));
+});
+
+document.querySelectorAll("#registerName, #registerIdentity, #registerHeadline, #registerSkills, #registerLinkedin, #registerFacebook, #registerLine").forEach((input) => {
+  input.addEventListener("input", () => {
+    syncRegistrationFromForm();
+    persist();
+    renderPersonalStatusScore();
+  });
+});
+
+document.querySelectorAll("#allowLinkedinFriends, #allowFacebookFriends, #allowLineFriends").forEach((input) => {
+  input.addEventListener("change", () => {
+    syncSnsPermissionsFromForm();
+    persist();
+    renderPersonalStatusScore();
+  });
+});
 
 document.querySelectorAll("#communitySelfName, #communitySelfIdentity, #communitySelfHeadline, #communitySelfSkills, #communitySelfChallenge, #communityLinkedin, #communityFacebook, #communityLine").forEach((input) => {
   input.addEventListener("input", () => {
@@ -2176,6 +2405,7 @@ document.querySelector("#resetDemo").addEventListener("click", () => {
   document.querySelector("#networkId").value = state.settings.networkId;
   document.querySelector("#useContributionWeight").checked = state.settings.useContributionWeight;
   render();
+  setActiveView("register");
   showToast("初期データに戻しました");
 });
 
