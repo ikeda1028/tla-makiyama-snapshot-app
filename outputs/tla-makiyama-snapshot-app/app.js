@@ -92,7 +92,7 @@ const memberDirectory = [
 ];
 
 const views = {
-  register: "会員登録",
+  register: "DAO会員登録",
   "sns-permission": "SNSの友達許可",
   "status-eval": "個人ステイタス評価",
   feed: "投稿フィード",
@@ -302,7 +302,7 @@ function renderOnboarding() {
 function renderOnboardingSteps(selector, current) {
   const container = document.querySelector(selector);
   if (!container) return;
-  const steps = ["会員登録", "SNS許可", "ステイタス評価", "投稿"];
+  const steps = ["DAO会員登録", "SNS許可", "ステイタス評価", "投稿"];
   container.innerHTML = steps.map((step, index) => `
     <div class="onboarding-step ${index < current ? "done" : index === current ? "active" : ""}">
       <span>${index + 1}</span>
