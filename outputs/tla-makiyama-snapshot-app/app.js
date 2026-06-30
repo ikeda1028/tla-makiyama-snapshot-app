@@ -62,7 +62,8 @@ const initialState = {
     permissions: {
       linkedin: false,
       facebook: false,
-      line: false
+      line: false,
+      anonymous: true
     },
     contacts: [
       { id: "n1", name: "会計管理", source: "LinkedIn", relation: "協力候補", skills: "会計, 精算, ガバナンス", status: "招待前", value: 18 },
@@ -338,13 +339,15 @@ function renderSnsPermissions() {
   document.querySelector("#allowLinkedinFriends").checked = !!state.community.permissions.linkedin;
   document.querySelector("#allowFacebookFriends").checked = !!state.community.permissions.facebook;
   document.querySelector("#allowLineFriends").checked = !!state.community.permissions.line;
+  document.querySelector("#allowAnonymousFriends").checked = state.community.permissions.anonymous !== false;
 }
 
 function syncSnsPermissionsFromForm() {
   state.community.permissions = {
     linkedin: document.querySelector("#allowLinkedinFriends").checked,
     facebook: document.querySelector("#allowFacebookFriends").checked,
-    line: document.querySelector("#allowLineFriends").checked
+    line: document.querySelector("#allowLineFriends").checked,
+    anonymous: document.querySelector("#allowAnonymousFriends").checked
   };
 }
 
@@ -354,7 +357,7 @@ function renderPermissionContactPreview() {
   preview.innerHTML = state.community.contacts.slice(-6).map((contact) => `
     <tr>
       <td>${escapeHtml(contact.name ?? "")}</td>
-      <td>${escapeHtml(contact.source ?? "")}</td>
+      <td>${escapeHtml(contact.source ?? "")}${contact.anonymous ? " / 匿名" : ""}</td>
       <td>${escapeHtml(contact.relation ?? "")}</td>
       <td>${escapeHtml(contact.skills ?? "")}</td>
       <td>${escapeHtml(contact.status ?? "")}</td>
@@ -365,10 +368,11 @@ function renderPermissionContactPreview() {
 
 function addAllowedSnsContacts() {
   syncSnsPermissionsFromForm();
+  const anonymous = state.community.permissions.anonymous !== false;
   const presets = [
-    state.community.permissions.linkedin ? { name: "LinkedIn専門家", source: "LinkedIn", relation: "専門家候補", skills: "事業開発, 組織設計", status: "参加候補", value: 24 } : null,
-    state.community.permissions.facebook ? { name: "Facebookコミュニティ仲間", source: "Facebook", relation: "活動仲間", skills: "地域連携, 発信", status: "交流中", value: 18 } : null,
-    state.community.permissions.line ? { name: "LINE連絡メンバー", source: "LINE", relation: "直接連絡", skills: "実行支援, 調整", status: "交流中", value: 16 } : null
+    state.community.permissions.linkedin ? { name: anonymous ? "匿名LinkedInメンバー" : "LinkedIn専門家", source: "LinkedIn", relation: anonymous ? "匿名専門家候補" : "専門家候補", skills: "事業開発, 組織設計", status: "参加候補", value: 24, anonymous } : null,
+    state.community.permissions.facebook ? { name: anonymous ? "匿名Facebookメンバー" : "Facebookコミュニティ仲間", source: "Facebook", relation: anonymous ? "匿名活動仲間" : "活動仲間", skills: "地域連携, 発信", status: "交流中", value: 18, anonymous } : null,
+    state.community.permissions.line ? { name: anonymous ? "匿名LINEメンバー" : "LINE連絡メンバー", source: "LINE", relation: anonymous ? "匿名直接連絡" : "直接連絡", skills: "実行支援, 調整", status: "交流中", value: 16, anonymous } : null
   ].filter(Boolean);
   let added = 0;
   presets.forEach((preset) => {
@@ -380,7 +384,7 @@ function addAllowedSnsContacts() {
   persist();
   renderCommunity();
   renderPermissionContactPreview();
-  document.querySelector("#snsPermissionState").textContent = `${added}件の候補を追加しました。API連携後は実データに置き換えます。`;
+  document.querySelector("#snsPermissionState").textContent = `${added}件の${anonymous ? "匿名" : "実名"}候補を追加しました。API連携後も本人許可に応じて表示名を切り替えます。`;
   document.querySelector("#snsPermissionState").className = "api-state ready";
 }
 
@@ -2251,7 +2255,7 @@ document.querySelectorAll("#registerName, #registerIdentity, #registerHeadline, 
   });
 });
 
-document.querySelectorAll("#allowLinkedinFriends, #allowFacebookFriends, #allowLineFriends").forEach((input) => {
+document.querySelectorAll("#allowLinkedinFriends, #allowFacebookFriends, #allowLineFriends, #allowAnonymousFriends").forEach((input) => {
   input.addEventListener("change", () => {
     syncSnsPermissionsFromForm();
     persist();

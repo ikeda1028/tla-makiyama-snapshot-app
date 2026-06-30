@@ -361,6 +361,40 @@ label {
   line-height: 1.5;
 }
 
+.anonymous-option {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  background: #f7fafc;
+}
+
+.anonymous-option input {
+  width: auto;
+  min-height: auto;
+  margin-top: 3px;
+}
+
+.anonymous-option strong,
+.anonymous-option span {
+  display: block;
+}
+
+.anonymous-option span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.anonymous-option strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
 .status-score-grid {
   display: grid;
   grid-template-columns: minmax(160px, 1.2fr) repeat(4, minmax(130px, 1fr));
