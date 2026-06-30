@@ -50,10 +50,10 @@ const initialState = {
   community: {
     selfMemberId: "",
     self: {
-      name: "牧山",
-      identity: "makiyama.eth",
-      headline: "プロジェクト設計 / PPM / DAO運営",
-      skills: "PPM, DAO, プロジェクト設計, 合意形成",
+      name: "鈴木太郎",
+      identity: "suzuki-taro.eth",
+      headline: "事業開発 / コミュニティ設計 / プロジェクト推進",
+      skills: "事業開発, コミュニティ設計, プロジェクト推進, 合意形成",
       challenge: "能力ある人が相互交流し、プロジェクトへ挑戦できるコミュニティづくり",
       linkedin: "",
       facebook: "",
@@ -69,10 +69,10 @@ const initialState = {
       { id: "n2", name: "外部連携", source: "Facebook", relation: "紹介", skills: "渉外, 地域連携, 広報", status: "交流中", value: 22 }
     ],
     posts: [
-      { id: "post-1", memberName: "牧山", text: "能力コミュニティとプロジェクト実行をつなぐ場を準備中です。", project: "G.D.DAOver.0", date: "2026-06-30" }
+      { id: "post-1", memberName: "鈴木太郎", text: "能力コミュニティとプロジェクト実行をつなぐ場を準備中です。", project: "G.D.DAOver.0", date: "2026-06-30" }
     ],
     updates: [
-      { id: "u1", memberName: "牧山", project: "G.D.DAOver.0", note: "能力コミュニティとプロジェクト実行をつなぐ設計を進行中。", date: "2026-06-30" }
+      { id: "u1", memberName: "鈴木太郎", project: "G.D.DAOver.0", note: "能力コミュニティとプロジェクト実行をつなぐ設計を進行中。", date: "2026-06-30" }
     ]
   }
 };
